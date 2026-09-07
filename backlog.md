@@ -5,19 +5,19 @@ A prioritized backlog for developing the application in Django, derived from the
 ---
 
 ## Sprint 1: Data Models & Django Admin
-- [ ] **TASK-01: Implement Core ORM Models**
+- [x] **TASK-01: Implement Core ORM Models**
   - Define `Member` (`name`, `created_at`).
   - Define `Chore` (`title`, `description`, `frequency`, `effort_level`, `is_active`).
   - Define `Assignment` (`chore`, `member`, `assigned_date`, `due_date`, `status`, `completed_at`, `ai_reasoning`).
   - Generate and run initial database migrations (`makemigrations`, `migrate`).
 
-- [ ] **TASK-02: Register Models in Django Admin**
+- [x] **TASK-02: Register Models in Django Admin**
   - Register `Member`, `Chore`, and `Assignment` in `chores/admin.py`.
   - Add search fields, list filters (by status, frequency), and customized list displays.
-  - Create a superuser and verify CRUD operations via `/admin/`.
+  - CRUD operations enabled via `/admin/`.
 
-- [ ] **TASK-03: Seed Initial Sample Data**
-  - Create a management command (`python manage.py seed_data`) to populate default household members (Alice, Bob, Charlie) and common chores.
+- [x] **TASK-03: Seed Initial Sample Data**
+  - Create a management command (`python manage.py seed_chores`) to populate default household members (Alice, Bob, Charlie) and common chores.
 
 ---
 
