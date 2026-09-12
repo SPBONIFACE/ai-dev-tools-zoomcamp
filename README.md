@@ -1,6 +1,19 @@
-# AI Household Chore Manager
+# AI DEVOPS Zoomcamp - Part 1: AI-Native Development: Specifications, Loop and Graph Engineering
 
-A smart shared household chore management tool that balances workloads, schedules recurring tasks, and uses an AI assistant to allocate chores fairly based on natural language availability and member preferences.
+  This project is part of **DataTalksClub's AI DevOps Zoomcamp (Module 1)**, exploring disciplined **AI-Native
+  Software Development** over ad-hoc prompting. It applies three core methodologies to build production-grade
+  software with AI:
+    - **Specification Engineering**: Defining clear technical plans and grooming tasks with unambiguous,
+  checkable acceptance criteria before writing code.
+    - **Loop Engineering**: Automating iterative agent execution cycles (`/goal`) that continuously code, test,
+  and self-correct until completion.
+    - **Graph Engineering**: Orchestrating specialized multi-agent teams (PM, Software Engineer, QA Engineer)
+  with strict separation of roles and independent verification gates.
+
+
+## AI Household Chore Manager 
+
+A smart shared household chore management tool that balances workloads, schedules recurring tasks, and uses an AI assistant to allocate chores fairly based on natural language availability ad member preferences. 
 
 ---
 
