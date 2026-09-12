@@ -48,5 +48,21 @@ Implement client-side JavaScript (`static/chores/dashboard.js`) to power the int
 - Configured static route in `chores/urls.py` ensuring static assets are served across test and local development environments.
 - Authored 15 integration tests in `chores/tests/test_dashboard_interactive.py` covering static file finder resolution, HTTP static file serving, template script/meta tags, DOM column IDs and badges, empty states, form controls, error alerts, and backing API complete/allocate workflows.
 - All 134 test suite tests pass cleanly via `uv run python manage.py test`.
-- Issue remains open for QA review.
+
+---
+
+## 6. QA Verdict: PASS
+- [x] Chore Board loads assignments from `GET /api/assignments/` and renders them into Pending, In Progress, and Completed columns. - PASS
+- [x] Clicking "Mark Done" updates assignment status via `POST /api/assignments/<id>/complete/` without reloading the page. - PASS
+- [x] Submitting natural language notes triggers `POST /api/allocate/` and displays reasoning summary and updated assignments. - PASS
+- [x] Loading states (spinners / disabled buttons) are active during API calls. - PASS
+- [x] Manual browser check: dashboard loads at `http://localhost:8000/` and interactive buttons function as expected. - PASS
+
+Tests: `uv run python manage.py test`, 134 passed, 0 failed
+
+---
+
+## 7. Orchestrator Status: CLOSED
+Issue #10 verified and officially closed. Backlog updated.
+
 

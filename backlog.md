@@ -54,7 +54,7 @@ A prioritized backlog for developing the application in Django, derived from the
   - Create `templates/chores/dashboard.html` styled with Tailwind CSS.
   - Header with household overview and quick metrics.
 
-- [ ] **TASK-10: Interactive Chore Board & Smart Allocator UI**
+- [x] **TASK-10: Interactive Chore Board & Smart Allocator UI**
   - Section 1: Active assignments categorized into *Pending*, *In Progress*, and *Completed* with a single-click "Mark Done" toggle.
   - Section 2: AI Smart Allocator form (natural language text area + "Run AI Allocation" button + reasoning display).
 
