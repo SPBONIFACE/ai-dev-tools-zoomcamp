@@ -43,7 +43,7 @@ A prioritized backlog for developing the application in Django, derived from the
   - `GET /api/members/`: List household members with current assignment counts.
   - `GET /api/assignments/`: List current week's assignments with status.
 
-- [ ] **TASK-08: Complete & Allocate Actions**
+- [x] **TASK-08: Complete & Allocate Actions**
   - `POST /api/assignments/<id>/complete/`: Mark assignment completed with timestamp.
   - `POST /api/allocate/`: Accept natural language prompt, execute allocation engine, and persist new assignments.
 
