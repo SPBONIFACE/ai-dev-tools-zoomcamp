@@ -1,14 +1,18 @@
-## 1. Description / Goal
-[Clear summary of what needs to be accomplished and why]
+## Goal
 
-## 2. Specification & Edge Cases
-[Detailed inputs, outputs, data schemas, and edge case handling]
+One or two sentences on what should be true when this is done.
 
-## 3. Acceptance Criteria
-[Checkable binary criteria where someone can verify yes or no]
-- [ ] Criterion 1
-- [ ] Criterion 2
+## Acceptance criteria
 
-## 4. Out of Scope
-[Explicitly deferred items with links to follow-up issues]
-- [Feature X](link to issue)
+- [ ] A statement you can check by looking at the result
+- [ ] One line per case, including the awkward ones
+
+## Out of scope
+
+- Something that does not belong in this task, moved to #TASK-NUMBER
+
+## Constraints
+
+- Files this should stay inside
+- Libraries to use
+- Guidelines to follow
