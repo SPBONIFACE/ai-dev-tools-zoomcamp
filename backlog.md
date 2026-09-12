@@ -38,7 +38,7 @@ A prioritized backlog for developing the application in Django, derived from the
 ---
 
 ## Sprint 3: Views & API Endpoints
-- [ ] **TASK-07: Chore & Member Endpoints**
+- [x] **TASK-07: Chore & Member Endpoints**
   - `GET /api/chores/`: List active chores.
   - `GET /api/members/`: List household members with current assignment counts.
   - `GET /api/assignments/`: List current week's assignments with status.
