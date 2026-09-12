@@ -4,6 +4,7 @@ from chores import views
 app_name = 'chores'
 
 urlpatterns = [
+    path('', views.dashboard_view, name='dashboard'),
     path('api/members/', views.members_api, name='api_members'),
     path('api/members', views.members_api),
     path('api/chores/', views.chores_api, name='api_chores'),

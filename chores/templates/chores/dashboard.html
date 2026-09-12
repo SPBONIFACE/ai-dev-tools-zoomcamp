@@ -1,0 +1,338 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Household Chore Manager</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-full bg-slate-950 text-slate-100 flex flex-col antialiased">
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">AI Household Chore Manager</h1>
+          <p class="text-xs sm:text-sm text-slate-400">Intelligent chore allocation, tracking, and household harmony</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Household status pill -->
+        <span id="household-status-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Household Active
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- Top Metrics Bar (4 Cards) -->
+    <section aria-label="Household Metrics Overview">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <!-- Card 1: Total Active Chores -->
+        <div class="metric-card bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700/80 transition flex flex-col justify-between">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Active Chores</p>
+              <h3 id="metric-total-active-chores" class="text-3xl font-bold text-white mt-2">
+                {{ total_active_chores|default:0 }}
+              </h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/60">
+            {% if total_active_chores == 0 %}
+            <span class="text-xs text-slate-400 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              No active chores
+            </span>
+            {% else %}
+            <span class="text-xs text-indigo-400 font-medium">Configured household tasks</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Card 2: Pending Assignments -->
+        <div class="metric-card bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700/80 transition flex flex-col justify-between">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pending Assignments</p>
+              <h3 id="metric-pending-assignments" class="text-3xl font-bold text-white mt-2">
+                {{ pending_assignments_count|default:0 }}
+              </h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/60">
+            {% if pending_assignments_count == 0 %}
+            <span class="text-xs text-slate-400 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+              No pending assignments
+            </span>
+            {% else %}
+            <span class="text-xs text-amber-400 font-medium">Tasks awaiting completion</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Card 3: Completed This Week -->
+        <div class="metric-card bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700/80 transition flex flex-col justify-between">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Completed This Week</p>
+              <h3 id="metric-completed-this-week" class="text-3xl font-bold text-white mt-2">
+                {{ completed_this_week_count|default:0 }}
+              </h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/60">
+            {% if completed_this_week_count == 0 %}
+            <span class="text-xs text-slate-400 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              No completed chores this week
+            </span>
+            {% else %}
+            <span class="text-xs text-emerald-400 font-medium">Finished in last 7 days</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Card 4: Active Household Members -->
+        <div class="metric-card bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700/80 transition flex flex-col justify-between">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Household Members</p>
+              <h3 id="metric-active-members" class="text-3xl font-bold text-white mt-2">
+                {{ active_members_count|default:0 }}
+              </h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/60">
+            {% if active_members_count == 0 %}
+            <span class="text-xs text-slate-400 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              No active members
+            </span>
+            {% else %}
+            <span class="text-xs text-purple-400 font-medium">Household participants</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Grid (2 Columns on Desktop, 1 Column on Mobile) -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <!-- Left Column (2/3 width): Chore Board Container -->
+      <div id="chore-board-container" class="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-md backdrop-blur">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4 border-b border-slate-800/70">
+          <div>
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <span>Chore Board</span>
+              <span class="text-xs font-normal text-slate-400 px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700">Live Status</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-0.5">Current chore assignments across household members</p>
+          </div>
+        </div>
+
+        <!-- 3-Column Status Board (Pending, In Progress, Completed) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <!-- Pending Column -->
+          <div class="status-column flex flex-col">
+            <div class="flex items-center justify-between px-2 py-1.5 mb-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300">
+              <span class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                Pending
+              </span>
+              <span id="pending-column-badge" class="text-xs font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">
+                {{ pending_assignments_count|default:0 }}
+              </span>
+            </div>
+            <div id="pending-column" class="flex-1 space-y-3 min-h-[160px] bg-slate-950/40 rounded-xl p-3 border border-slate-800/50">
+              <!-- Empty state fallback text -->
+              <div class="empty-state text-center py-8 px-3 text-slate-400 text-xs flex flex-col items-center justify-center h-full">
+                <svg class="w-8 h-8 text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>No pending assignments</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- In Progress Column -->
+          <div class="status-column flex flex-col">
+            <div class="flex items-center justify-between px-2 py-1.5 mb-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300">
+              <span class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                In Progress
+              </span>
+              <span id="in-progress-column-badge" class="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-400/20 text-blue-300">0</span>
+            </div>
+            <div id="in-progress-column" class="flex-1 space-y-3 min-h-[160px] bg-slate-950/40 rounded-xl p-3 border border-slate-800/50">
+              <!-- Empty state fallback text -->
+              <div class="empty-state text-center py-8 px-3 text-slate-400 text-xs flex flex-col items-center justify-center h-full">
+                <svg class="w-8 h-8 text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>No chores in progress</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Completed Column -->
+          <div class="status-column flex flex-col">
+            <div class="flex items-center justify-between px-2 py-1.5 mb-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+              <span class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                Completed
+              </span>
+              <span id="completed-column-badge" class="text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-300">
+                {{ completed_this_week_count|default:0 }}
+              </span>
+            </div>
+            <div id="completed-column" class="flex-1 space-y-3 min-h-[160px] bg-slate-950/40 rounded-xl p-3 border border-slate-800/50">
+              <!-- Empty state fallback text -->
+              <div class="empty-state text-center py-8 px-3 text-slate-400 text-xs flex flex-col items-center justify-center h-full">
+                <svg class="w-8 h-8 text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>No completed chores</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column (1/3 width): AI Allocator Panel -->
+      <div id="ai-allocator-container" class="lg:col-span-1 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-md backdrop-blur flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between pb-4 border-b border-slate-800/70">
+            <div>
+              <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>AI Allocator</span>
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-400 mt-0.5">Smart chore distribution with fairness heuristics</p>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-4">
+            <div>
+              <label for="allocator-notes" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                Allocation Notes & Constraints
+              </label>
+              <textarea
+                id="allocator-notes"
+                name="user_notes"
+                rows="4"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
+                placeholder="e.g. Alice is away Friday to Sunday, Bob prefers outdoor tasks, Charlie has exams this week..."
+              ></textarea>
+              <p class="text-[11px] text-slate-400 mt-1.5">Optional context for AI reasoning and fairness optimization.</p>
+            </div>
+
+            <!-- Action button -->
+            <button
+              id="btn-allocate"
+              type="button"
+              class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
+            >
+              <!-- Spinner (hidden by default) -->
+              <svg id="allocator-spinner" class="hidden w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="btn-allocate-text">Run AI Allocation</span>
+            </button>
+
+            <!-- Error alert box (hidden by default) -->
+            <div id="allocation-error" class="hidden p-3.5 bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs rounded-xl flex items-start gap-2">
+              <svg class="w-4 h-4 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span id="allocation-error-message">Failed to run allocation. Please try again.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Reasoning / Status Container -->
+        <div id="allocation-results" class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/60 text-xs text-slate-400 space-y-2">
+          <div class="flex items-center justify-between text-slate-300 font-medium">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Allocation Status
+            </span>
+            <span id="allocator-engine-badge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase tracking-wider">Ready</span>
+          </div>
+          <p id="allocation-summary" class="text-slate-400 leading-relaxed">
+            Ready to allocate tasks. Enter optional constraints and click 'Run AI Allocation' to optimize chore distribution.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Client-side JavaScript hook (TASK-10 integration) -->
+  <script src="{% static 'chores/dashboard.js' %}" defer></script>
+</body>
+</html>

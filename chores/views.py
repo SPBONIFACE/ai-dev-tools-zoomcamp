@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
@@ -499,3 +500,35 @@ def allocate_api(request):
         },
         status=200,
     )
+
+
+def dashboard_view(request):
+    """
+    Render the main household chore management dashboard.
+    Computes summary metrics context:
+    - total_active_chores: Active chore count.
+    - pending_assignments_count: Uncompleted pending assignments count.
+    - completed_this_week_count: Assignments completed within the past 7 days.
+    - active_members_count: Total active household members count.
+    """
+    total_active_chores = Chore.objects.filter(is_active=True).count()
+    pending_assignments_count = Assignment.objects.filter(status=Assignment.Status.PENDING).count()
+
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    completed_this_week_count = Assignment.objects.filter(
+        status=Assignment.Status.COMPLETED
+    ).filter(
+        Q(completed_at__gte=seven_days_ago) |
+        Q(completed_at__isnull=True, assigned_date__gte=seven_days_ago.date())
+    ).count()
+
+    active_members_count = Member.objects.count()
+
+    context = {
+        'total_active_chores': total_active_chores,
+        'pending_assignments_count': pending_assignments_count,
+        'completed_this_week_count': completed_this_week_count,
+        'active_members_count': active_members_count,
+    }
+
+    return render(request, 'chores/dashboard.html', context)
