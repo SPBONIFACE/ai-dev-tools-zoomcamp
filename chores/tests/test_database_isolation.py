@@ -86,3 +86,72 @@ class DatabaseIsolationTests(TestCase):
             post_hash,
             "Root db.sqlite3 file content was altered during test execution!",
         )
+
+
+class CIWorkflowTests(TestCase):
+    """
+    Test suite validating GitHub Actions CI workflow (.github/workflows/ci.yml).
+    Verifies workflow file existence, YAML syntax compliance, event triggers,
+    environment variables, action dependencies, and execution steps.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.workflow_path = settings.BASE_DIR / '.github' / 'workflows' / 'ci.yml'
+        cls.content = cls.workflow_path.read_text(encoding='utf-8') if cls.workflow_path.exists() else ''
+
+    def test_workflow_file_exists(self):
+        """Verify .github/workflows/ci.yml exists and is not empty."""
+        self.assertTrue(self.workflow_path.exists(), "Workflow file .github/workflows/ci.yml does not exist.")
+        self.assertGreater(len(self.content.strip()), 0, "Workflow file is empty.")
+
+    def test_workflow_yaml_syntax_and_formatting(self):
+        """Verify YAML syntax formatting: no illegal tabs, valid top-level keys."""
+        self.assertNotIn('\t', self.content, "YAML workflow must use spaces instead of tab indentation.")
+
+        for key in ['name:', 'on:', 'env:', 'jobs:']:
+            self.assertIn(key, self.content, f"Missing required top-level YAML key: {key}")
+
+        lines = self.content.splitlines()
+        for i, line in enumerate(lines, start=1):
+            if not line.strip() or line.strip().startswith('#'):
+                continue
+            indent = len(line) - len(line.lstrip(' '))
+            self.assertEqual(
+                indent % 2, 0,
+                f"Line {i} has irregular indentation of {indent} spaces (must be multiple of 2): '{line}'",
+            )
+
+    def test_workflow_name_and_triggers(self):
+        """Verify workflow name is 'CI Pipeline' and triggers on push and PR to main."""
+        self.assertIn("name: CI Pipeline", self.content)
+        self.assertIn("push:", self.content)
+        self.assertIn("pull_request:", self.content)
+        self.assertIn("branches: [ main ]", self.content)
+
+    def test_workflow_environment_variables(self):
+        """Verify environment variables AI_PROVIDER=mock and PYTHONUNBUFFERED=1."""
+        self.assertIn("AI_PROVIDER: mock", self.content)
+        self.assertIn('PYTHONUNBUFFERED: "1"', self.content)
+
+    def test_workflow_job_runner(self):
+        """Verify job test-and-build runs on ubuntu-latest."""
+        self.assertIn("test-and-build:", self.content)
+        self.assertIn("runs-on: ubuntu-latest", self.content)
+
+    def test_workflow_action_versions(self):
+        """Verify standard GitHub actions with correct versions are used."""
+        self.assertIn("actions/checkout@v4", self.content)
+        self.assertIn("astral-sh/setup-uv@v5", self.content)
+        self.assertIn("actions/setup-python@v5", self.content)
+        self.assertIn('python-version: "3.11"', self.content)
+        self.assertIn("enable-cache: true", self.content)
+
+    def test_workflow_execution_steps(self):
+        """Verify required dependency sync, linting, testing, and Docker build steps."""
+        self.assertIn("uv sync --frozen", self.content)
+        self.assertIn("ruff check .", self.content)
+        self.assertIn("uv run python manage.py test", self.content)
+        self.assertIn("docker build -t chore-manager:ci .", self.content)
+
