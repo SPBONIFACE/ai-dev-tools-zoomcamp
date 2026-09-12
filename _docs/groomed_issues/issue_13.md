@@ -1,35 +1,54 @@
 # [Sprint 5] TASK-13: GitHub Actions CI Workflow
 
 ## 1. Description / Goal
-Configure an automated GitHub Actions CI workflow (`.github/workflows/ci.yml`) that runs on every push and pull request to `main`. The pipeline automatically lints the codebase, executes the offline test suite, and verifies Docker image compilation.
+Configure an automated Continuous Integration (CI) workflow (`.github/workflows/ci.yml`) triggered on all pushes and pull requests to `main`. The workflow verifies code formatting/linting, executes the offline test suite, and builds the container image to prevent regressions before code is merged.
 
 ## 2. Specification & Edge Cases
 
 **Target File Location**: `.github/workflows/ci.yml`
 
-### Workflow Pipeline Steps:
-1. **Trigger Events**:
-   - `push: branches: [ main ]`
-   - `pull_request: branches: [ main ]`
-2. **Jobs**:
-   - `job: test-and-build` running on `ubuntu-latest`.
-   - **Step 1**: `actions/checkout@v4`
-   - **Step 2**: Install `uv` (`astral-sh/setup-uv@v3`).
-   - **Step 3**: Set up Python (`actions/setup-python@v5` with `python-version: "3.11"`).
-   - **Step 4**: Install dependencies (`uv sync`).
-   - **Step 5**: Run linter (`uv run ruff check .`).
-   - **Step 6**: Run automated tests (`uv run python manage.py test`).
-   - **Step 7**: Build Docker image (`docker build -t chore-manager:ci .`).
+### Workflow Pipeline Specification:
+1. **Name**: `CI Pipeline`
+2. **Trigger Events**:
+   - `push`: branches `[ main ]`
+   - `pull_request`: branches `[ main ]`
+3. **Environment Variables** (Workflow or Job level):
+   - `AI_PROVIDER: mock`
+   - `PYTHONUNBUFFERED: "1"`
+4. **Jobs & Steps (`test-and-build`)**:
+   - **Runner**: `ubuntu-latest`
+   - **Step 1: Checkout Code**:
+     - `uses: actions/checkout@v4`
+   - **Step 2: Install uv**:
+     - `uses: astral-sh/setup-uv@v5`
+     - `with: enable-cache: true`
+   - **Step 3: Set up Python**:
+     - `uses: actions/setup-python@v5`
+     - `with: python-version: "3.11"`
+   - **Step 4: Install Dependencies**:
+     - `run: uv sync --frozen` (or `make install` / `uv sync`)
+   - **Step 5: Code Quality & Lint Check**:
+     - `run: uv run ruff check .` (or `uvx ruff check .` / `make lint`)
+   - **Step 6: Automated Test Suite**:
+     - `run: uv run python manage.py test` (or `make test`)
+   - **Step 7: Docker Image Build Verification**:
+     - `run: docker build -t chore-manager:ci .` (or `make docker-build`)
 
-### Edge Cases & Validation Rules:
-- **No Secret Tokens Required**: Workflow must complete 100% successfully without relying on external secret API tokens (`OPENAI_API_KEY`, etc.).
-- **Fast Execution**: Entire CI run must complete within 2 minutes.
+### Constraints, Edge Cases & Validation Rules:
+- **Zero Secrets / Offline Determinism**: CI must run completely offline without configuring or requiring GitHub repository secret tokens (`OPENAI_API_KEY`, `GEMINI_API_KEY`, etc.). `AI_PROVIDER=mock` ensures allocation services fallback cleanly.
+- **Workflow YAML Validity**: File must be valid YAML syntax parseable by GitHub Actions schema parsers without syntax or indentation errors.
+- **Fast Execution**: Entire CI run should leverage uv caching and multi-stage Docker build caching to complete within 2 minutes.
+- **Failure Short-Circuit**: If linting or tests fail, subsequent build steps must not execute and the pull request status check must report a failure.
 
 ## 3. Acceptance Criteria
-- [ ] Workflow file `.github/workflows/ci.yml` exists and is valid YAML syntax.
-- [ ] Configured to run on pushes and pull requests targeting `main`.
-- [ ] Includes steps for linting (`ruff`), testing (`python manage.py test`), and Docker image build verification.
-- [ ] CI pipeline passes cleanly on GitHub when pushed.
+- [ ] Workflow file `.github/workflows/ci.yml` exists with valid YAML syntax.
+- [ ] Workflow triggers on both `push` and `pull_request` targeting the `main` branch.
+- [ ] Uses `actions/checkout@v4`, `astral-sh/setup-uv@v5`, and `actions/setup-python@v5` (Python 3.11).
+- [ ] Executes dependency installation (`uv sync`), linting (`ruff check .`), automated tests (`python manage.py test`), and Docker image build (`docker build -t chore-manager:ci .`).
+- [ ] Sets environment variable `AI_PROVIDER=mock` so the pipeline runs keylessly without requiring GitHub repository secrets.
+- [ ] All CI steps complete successfully with zero errors on standard pushes/PRs.
 
 ## 4. Out of Scope
-- Production deployment / CD pipelines (e.g. AWS / Heroku / GCP App Engine).
+- Automated CD deployment to cloud hosting (AWS, GCP, Heroku, Fly.io).
+- Image registry publishing (pushing Docker images to Docker Hub or GitHub Container Registry `ghcr.io`).
+- [TASK-14 / Issue #14](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/14) — Pytest runner migration.
