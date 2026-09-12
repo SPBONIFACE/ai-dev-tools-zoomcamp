@@ -1,9 +1,21 @@
 import json
-from django.db import IntegrityError
-from django.db.models import Count, Q
+import os
+from datetime import timedelta
+from django.conf import settings
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
+from chores.allocation.llm_engine import LLMAllocationEngine
+from chores.allocation.mock_engine import MockAllocationEngine
+from chores.allocation.schemas import (
+    AllocationRequest,
+    ChoreData,
+    MemberData,
+    WorkloadHistory,
+)
 from chores.models import Assignment, Chore, Member
 
 
@@ -249,3 +261,241 @@ def assignments_api(request):
         return JsonResponse(data, safe=False, status=200)
 
     return JsonResponse({'error': f'Method {request.method} not allowed.'}, status=405)
+
+
+@csrf_exempt
+def complete_assignment_api(request, id=None, assignment_id=None):
+    """
+    Handle marking an assignment as completed.
+    - POST /api/assignments/<id>/complete/
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': f'Method {request.method} not allowed.'}, status=405)
+
+    target_id = id if id is not None else assignment_id
+
+    # Validate optional JSON body if present
+    content_type = request.content_type or ''
+    if request.body:
+        body_str = request.body.decode('utf-8', errors='ignore').strip()
+        if 'application/json' in content_type or (body_str.startswith('{') and body_str.endswith('}')):
+            try:
+                payload = json.loads(body_str)
+                if not isinstance(payload, dict):
+                    return JsonResponse({'error': 'Request body must be a JSON object.'}, status=400)
+                status = payload.get('status')
+                if status is not None and status != Assignment.Status.COMPLETED:
+                    return JsonResponse(
+                        {'error': f"Invalid status '{status}'. Expected 'completed'."},
+                        status=400,
+                    )
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON in request body.'}, status=400)
+        elif body_str and not body_str.startswith('--') and 'multipart' not in content_type:
+            return JsonResponse({'error': 'Invalid JSON in request body.'}, status=400)
+
+    try:
+        assignment = Assignment.objects.select_related('chore', 'member').get(pk=target_id)
+    except Assignment.DoesNotExist:
+        return JsonResponse({'error': f'Assignment with id {target_id} not found.'}, status=404)
+
+    # Idempotent state transition
+    assignment.mark_completed()
+
+    return JsonResponse(
+        {
+            'id': assignment.id,
+            'chore': {
+                'id': assignment.chore.id,
+                'title': assignment.chore.title,
+                'description': assignment.chore.description,
+                'frequency': assignment.chore.frequency,
+                'effort_level': assignment.chore.effort_level,
+            },
+            'member': {
+                'id': assignment.member.id,
+                'name': assignment.member.name,
+            },
+            'assigned_date': assignment.assigned_date.isoformat() if assignment.assigned_date else None,
+            'due_date': assignment.due_date.isoformat() if assignment.due_date else None,
+            'status': assignment.status,
+            'completed_at': assignment.completed_at.isoformat() if assignment.completed_at else None,
+            'ai_reasoning': assignment.ai_reasoning,
+        },
+        status=200,
+    )
+
+
+def get_allocation_engine():
+    """
+    Instantiate the appropriate allocation engine based on AI_PROVIDER settings.
+    Defaults to MockAllocationEngine when no provider or 'mock' is configured.
+    """
+    provider = getattr(settings, 'AI_PROVIDER', None) or os.environ.get('AI_PROVIDER')
+    if provider and str(provider).lower() != 'mock':
+        return LLMAllocationEngine()
+    return MockAllocationEngine()
+
+
+@csrf_exempt
+def allocate_api(request):
+    """
+    Trigger smart chore allocation.
+    - POST /api/allocate/
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': f'Method {request.method} not allowed.'}, status=405)
+
+    payload = {}
+    if request.body:
+        try:
+            body = request.body.decode('utf-8').strip()
+            if body:
+                payload = json.loads(body)
+                if not isinstance(payload, dict):
+                    return JsonResponse({'error': 'Request body must be a JSON object.'}, status=400)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({'error': 'Invalid JSON in request body.'}, status=400)
+
+    user_notes = payload.get('user_notes', '')
+    if not isinstance(user_notes, str):
+        user_notes = str(user_notes) if user_notes is not None else ''
+
+    dry_run = payload.get('dry_run', False)
+    if isinstance(dry_run, str):
+        dry_run = dry_run.strip().lower() in ('true', '1')
+    elif not isinstance(dry_run, bool):
+        dry_run = bool(dry_run)
+
+    members = Member.objects.all().order_by('name')
+    chores = Chore.objects.filter(is_active=True).order_by('title')
+
+    if not members.exists() or not chores.exists():
+        return JsonResponse(
+            {
+                'error': 'Cannot run allocation without active members and chores.',
+                'message': 'Cannot run allocation without active members and chores.',
+            },
+            status=400,
+        )
+
+    # Calculate recent workload history per member (past 14 days)
+    cutoff_date = timezone.now().date() - timedelta(days=14)
+    effort_by_member = dict(
+        Assignment.objects.filter(assigned_date__gte=cutoff_date)
+        .exclude(status=Assignment.Status.SKIPPED)
+        .values('member_id')
+        .annotate(recent_effort=Sum('chore__effort_level'))
+        .values_list('member_id', 'recent_effort')
+    )
+
+    workload_history = [
+        WorkloadHistory(
+            member_id=m.id,
+            recent_effort_sum=effort_by_member.get(m.id, 0) or 0,
+        )
+        for m in members
+    ]
+
+    allocation_request = AllocationRequest(
+        members=[MemberData(id=m.id, name=m.name) for m in members],
+        chores=[
+            ChoreData(
+                id=c.id,
+                title=c.title,
+                effort_level=c.effort_level,
+                frequency=c.frequency,
+            )
+            for c in chores
+        ],
+        workload_history=workload_history,
+        user_notes=user_notes,
+    )
+
+    engine = get_allocation_engine()
+    allocation_response = engine.allocate(allocation_request)
+
+    member_map = {m.id: m for m in members}
+    chore_map = {c.id: c for c in chores}
+
+    if not dry_run:
+        with transaction.atomic():
+            persisted_assignments = []
+            for proposed in allocation_response.assignments:
+                assignment = Assignment.objects.create(
+                    chore=chore_map[proposed.chore_id],
+                    member=member_map[proposed.member_id],
+                    status=Assignment.Status.PENDING,
+                    ai_reasoning=proposed.reasoning,
+                    assigned_date=timezone.now().date(),
+                )
+                persisted_assignments.append(assignment)
+
+        serialized_assignments = [
+            {
+                'id': a.id,
+                'chore_id': a.chore_id,
+                'member_id': a.member_id,
+                'chore_title': a.chore.title,
+                'member_name': a.member.name,
+                'chore': {
+                    'id': a.chore.id,
+                    'title': a.chore.title,
+                    'description': a.chore.description,
+                    'frequency': a.chore.frequency,
+                    'effort_level': a.chore.effort_level,
+                },
+                'member': {
+                    'id': a.member.id,
+                    'name': a.member.name,
+                },
+                'assigned_date': a.assigned_date.isoformat() if a.assigned_date else None,
+                'due_date': a.due_date.isoformat() if a.due_date else None,
+                'status': a.status,
+                'completed_at': a.completed_at.isoformat() if a.completed_at else None,
+                'ai_reasoning': a.ai_reasoning,
+                'reasoning': a.ai_reasoning,
+            }
+            for a in persisted_assignments
+        ]
+        assignments_created_count = len(persisted_assignments)
+    else:
+        serialized_assignments = [
+            {
+                'id': None,
+                'chore_id': proposed.chore_id,
+                'member_id': proposed.member_id,
+                'chore_title': chore_map[proposed.chore_id].title if proposed.chore_id in chore_map else '',
+                'member_name': member_map[proposed.member_id].name if proposed.member_id in member_map else '',
+                'chore': {
+                    'id': chore_map[proposed.chore_id].id,
+                    'title': chore_map[proposed.chore_id].title,
+                    'description': chore_map[proposed.chore_id].description,
+                    'frequency': chore_map[proposed.chore_id].frequency,
+                    'effort_level': chore_map[proposed.chore_id].effort_level,
+                } if proposed.chore_id in chore_map else None,
+                'member': {
+                    'id': member_map[proposed.member_id].id,
+                    'name': member_map[proposed.member_id].name,
+                } if proposed.member_id in member_map else None,
+                'assigned_date': timezone.now().date().isoformat(),
+                'due_date': None,
+                'status': Assignment.Status.PENDING,
+                'completed_at': None,
+                'ai_reasoning': proposed.reasoning,
+                'reasoning': proposed.reasoning,
+            }
+            for proposed in allocation_response.assignments
+        ]
+        assignments_created_count = 0
+
+    return JsonResponse(
+        {
+            'success': True,
+            'engine_used': allocation_response.engine_used,
+            'assignments_created': assignments_created_count,
+            'raw_reasoning_summary': allocation_response.raw_reasoning_summary,
+            'assignments': serialized_assignments,
+        },
+        status=200,
+    )

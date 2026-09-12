@@ -43,12 +43,21 @@ Implement state mutation and allocation action endpoints: marking an assignment 
 - **Dry Run Mode**: If `dry_run == true`, execute engine and return proposed assignments without writing records to `db.sqlite3`.
 
 ## 3. Acceptance Criteria
-- [ ] Endpoint `POST /api/assignments/<id>/complete/` marks assignment completed, sets `completed_at`, and returns HTTP 200.
-- [ ] Endpoint `POST /api/assignments/<invalid_id>/complete/` returns HTTP 404.
-- [ ] Endpoint `POST /api/allocate/` runs allocation engine with natural language notes and returns HTTP 200 with generated assignments.
-- [ ] Persisted assignments are saved in SQLite database when `dry_run=false`.
-- [ ] Integration tests in `chores/tests/test_api_actions.py` verify completion workflow and allocation persistence.
-- [ ] All unit and integration tests pass cleanly via `uv run python manage.py test`.
+- [x] Endpoint `POST /api/assignments/<id>/complete/` marks assignment completed, sets `completed_at`, and returns HTTP 200.
+- [x] Endpoint `POST /api/assignments/<invalid_id>/complete/` returns HTTP 404.
+- [x] Endpoint `POST /api/allocate/` runs allocation engine with natural language notes and returns HTTP 200 with generated assignments.
+- [x] Persisted assignments are saved in SQLite database when `dry_run=false`.
+- [x] Integration tests in `chores/tests/test_api_actions.py` verify completion workflow and allocation persistence.
+- [x] All unit and integration tests pass cleanly via `uv run python manage.py test`.
 
 ## 4. Out of Scope
 - [TASK-10 / Issue #10](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/10) — Dashboard UI buttons for completing chores and triggering AI allocation.
+
+---
+
+## 5. Engineer Comment (Status: Implemented & Open for Review)
+- Implemented `complete_assignment_api` in `chores/views.py`: handles `POST /api/assignments/<id>/complete/`, idempotently calls `mark_completed()`, sets `completed_at`, and returns 200 OK or 404 Not Found.
+- Implemented `allocate_api` in `chores/views.py`: handles `POST /api/allocate/`, computes 14-day workload history per member, invokes `LLMAllocationEngine` (with mock fallback), persists assignments in DB when `dry_run=false`, and returns proposed assignments when `dry_run=true`.
+- Added URL routes in `chores/urls.py`.
+- Authored 17 integration tests in `chores/tests/test_api_actions.py` verifying completion (200, 404, idempotency), allocation (dry_run true/false, empty member/chore 400 validation, workload history calculation, and user notes adherence).
+- All 109 tests pass cleanly via `uv run python manage.py test`.
