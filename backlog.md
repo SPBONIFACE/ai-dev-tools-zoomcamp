@@ -61,7 +61,7 @@ A prioritized backlog for developing the application in Django, derived from the
 ---
 
 ## Sprint 5: Testing & DevOps Pipeline
-- [ ] **TASK-11: Automated Test Suite**
+- [x] **TASK-11: Automated Test Suite**
   - Unit tests for model methods and validation in `chores/tests.py`.
   - Integration tests for API endpoints and the mock AI allocator.
   - Verify complete test pass via `python manage.py test`.
