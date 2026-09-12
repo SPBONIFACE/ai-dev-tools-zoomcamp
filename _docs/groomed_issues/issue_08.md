@@ -61,3 +61,15 @@ Implement state mutation and allocation action endpoints: marking an assignment 
 - Added URL routes in `chores/urls.py`.
 - Authored 17 integration tests in `chores/tests/test_api_actions.py` verifying completion (200, 404, idempotency), allocation (dry_run true/false, empty member/chore 400 validation, workload history calculation, and user notes adherence).
 - All 109 tests pass cleanly via `uv run python manage.py test`.
+
+---
+
+## 6. QA Verdict: PASS
+- [x] Endpoint `POST /api/assignments/<id>/complete/` marks assignment completed, sets `completed_at`, and returns HTTP 200. - PASS
+- [x] Endpoint `POST /api/assignments/<invalid_id>/complete/` returns HTTP 404. - PASS
+- [x] Endpoint `POST /api/allocate/` runs allocation engine with natural language notes and returns HTTP 200 with generated assignments. - PASS
+- [x] Persisted assignments are saved in SQLite database when `dry_run=false`. - PASS
+- [x] Integration tests in `chores/tests/test_api_actions.py` verify completion workflow and allocation persistence. - PASS
+- [x] All unit and integration tests pass cleanly via `uv run python manage.py test`. - PASS
+
+Tests: `uv run python manage.py test`, 109 passed, 0 failed
