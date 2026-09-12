@@ -30,7 +30,7 @@ A prioritized backlog for developing the application in Django, derived from the
   - Implement rule-based assignment balancer (effort points + availability heuristics).
   - Ensures tests and local development run reliably offline with zero API costs.
 
-- [ ] **TASK-06: Integrate LLM Client (OpenAI / Gemini / Groq)**
+- [x] **TASK-06: Integrate LLM Client (OpenAI / Gemini / Groq)**
   - Implement prompt template incorporating natural language availability notes.
   - Request structured JSON output conforming to the assignment schema.
   - Add fallback to mock engine when API key is missing or calls fail.
