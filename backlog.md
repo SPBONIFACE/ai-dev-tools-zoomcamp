@@ -70,5 +70,5 @@ A prioritized backlog for developing the application in Django, derived from the
   - Create multi-stage `Dockerfile` and `docker-compose.yml` with SQLite volume mount.
   - Create `Makefile` with standard developer targets (`run`, `test`, `migrate`, `lint`).
 
-- [ ] **TASK-13: GitHub Actions CI Workflow**
+- [x] **TASK-13: GitHub Actions CI Workflow**
   - Configure `.github/workflows/ci.yml` to run linter (`ruff`), test suite, and Docker build on push/PR.
