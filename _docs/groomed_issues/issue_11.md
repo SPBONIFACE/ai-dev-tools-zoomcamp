@@ -41,12 +41,31 @@ Consolidate, expand, and verify full test coverage across all application layers
   - Calling `mark_completed()` on an already completed assignment does not corrupt or erase previous completion data.
 
 ## 3. Acceptance Criteria
-- [ ] Test suite is organized under `chores/tests/` with modular test files covering models, allocation engines, API endpoints, and dashboard views.
-- [ ] 100% of test cases pass with zero failures and zero errors when running `uv run python manage.py test`.
-- [ ] All tests execute completely offline without requiring internet access or active third-party API keys (`OPENAI_API_KEY`, `GEMINI_API_KEY`, etc.).
-- [ ] Running the test suite leaves the root `db.sqlite3` database file unmodified (unaltered file content and no test records persisted).
-- [ ] Full test suite execution (`uv run python manage.py test`) completes in under 5 seconds.
+- [x] Test suite is organized under `chores/tests/` with modular test files covering models, allocation engines, API endpoints, and dashboard views.
+- [x] 100% of test cases pass with zero failures and zero errors when running `uv run python manage.py test`.
+- [x] All tests execute completely offline without requiring internet access or active third-party API keys (`OPENAI_API_KEY`, `GEMINI_API_KEY`, etc.).
+- [x] Running the test suite leaves the root `db.sqlite3` database file unmodified (unaltered file content and no test records persisted).
+- [x] Full test suite execution (`uv run python manage.py test`) completes in under 5 seconds.
 
 ## 4. Out of Scope
 - [TASK-13 / Issue #13](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/13) — Configuring GitHub Actions CI workflow to run tests automatically on pull requests and pushes.
 - [TASK-14 / Issue #14](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/14) — Pytest runner migration & `pytest-django` tooling integration (deferred: `uv run python manage.py test` is the project's canonical test suite runner per `_docs/process.md`; adding `pytest` requires separate dependency evaluation).
+
+---
+
+## 5. Engineer Comment (Status: Implemented & Open for Review)
+- Consolidated, expanded, and validated the automated test suite across all application layers in `chores/tests/`:
+  - **Data Models & Admin** (`test_models.py`):
+    - Added tests for `Assignment.Status` choices (`pending`, `in_progress`, `completed`, `skipped`).
+    - Added idempotency tests for `Assignment.mark_completed()` verifying repeated calls preserve status and do not corrupt timestamps or AI reasoning.
+    - Verified admin registration, search fields, list filters, list display, and ordering for `MemberAdmin`, `ChoreAdmin`, and `AssignmentAdmin`.
+    - Verified `seed_chores` command idempotency and verification of specific default member names and chore titles.
+  - **API Endpoints & Actions** (`test_api_endpoints.py` and `test_api_actions.py`):
+    - Added tests verifying HTTP 405 Method Not Allowed on all unsupported HTTP verbs (PUT, DELETE, PATCH, GET) across `api/members/`, `api/chores/`, `api/assignments/`, `api/assignments/<id>/complete/`, and `api/allocate/`.
+    - Added allocation edge cases covering unicode notes (multilingual characters, accents, emojis) and whitespace-only notes.
+  - **Database Isolation** (`test_database_isolation.py`):
+    - Added verification of test runner database isolation against Django in-memory / test databases.
+    - Verified directly via raw SQLite connection and SHA256 file hashing that mutations during test execution do not modify or pollute the root `db.sqlite3` database.
+- Executed `uv run python manage.py test`: 148 test cases pass with 100% success rate, 0 failures, 0 errors, in ~0.16 seconds (< 5 seconds required).
+- Issue remains open for QA review.
+

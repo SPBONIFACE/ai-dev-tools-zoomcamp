@@ -101,6 +101,19 @@ class AssignmentCompleteApiTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 405)
 
+    def test_complete_assignment_all_unsupported_verbs(self):
+        """PUT, DELETE, and PATCH return 405 Method Not Allowed on /api/assignments/<id>/complete/."""
+        url = reverse('chores:api_assignment_complete', args=[self.assignment.id])
+        for method in ['put', 'delete', 'patch']:
+            client_method = getattr(self.client, method)
+            response = client_method(url, data={}, content_type="application/json")
+            self.assertEqual(
+                response.status_code,
+                405,
+                f"Expected HTTP 405 for {method.upper()} on complete endpoint, got {response.status_code}",
+            )
+            self.assertIn("error", response.json())
+
 
 class AllocateApiTests(TestCase):
     def setUp(self):
@@ -252,6 +265,46 @@ class AllocateApiTests(TestCase):
         """GET /api/allocate/ returns 405 Method Not Allowed."""
         response = self.client.get(reverse('chores:api_allocate'))
         self.assertEqual(response.status_code, 405)
+
+    def test_allocate_all_unsupported_verbs(self):
+        """PUT, DELETE, and PATCH return 405 Method Not Allowed on /api/allocate/."""
+        url = reverse('chores:api_allocate')
+        for method in ['put', 'delete', 'patch']:
+            client_method = getattr(self.client, method)
+            response = client_method(url, data={}, content_type="application/json")
+            self.assertEqual(
+                response.status_code,
+                405,
+                f"Expected HTTP 405 for {method.upper()} on allocate endpoint, got {response.status_code}",
+            )
+            self.assertIn("error", response.json())
+
+    def test_allocate_unicode_notes(self):
+        """POST /api/allocate/ handles unicode characters, accents, and emojis safely."""
+        unicode_notes = "Alice est en vacances à Paris ✈️; Bob préfère faire la cuisine 🍳. François & Müller."
+        response = self.client.post(
+            reverse('chores:api_allocate'),
+            data=json.dumps({"dry_run": True, "user_notes": unicode_notes}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertGreater(len(data['assignments']), 0)
+        self.assertTrue(len(data['raw_reasoning_summary']) > 0)
+
+    def test_allocate_whitespace_only_notes(self):
+        """POST /api/allocate/ with whitespace-only notes performs round-robin allocation cleanly."""
+        whitespace_notes = "   \n\t   \r   "
+        response = self.client.post(
+            reverse('chores:api_allocate'),
+            data=json.dumps({"dry_run": True, "user_notes": whitespace_notes}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(len(data['assignments']), 2)
 
     def test_allocate_invalid_json(self):
         """POST /api/allocate/ with malformed JSON returns 400 Bad Request."""

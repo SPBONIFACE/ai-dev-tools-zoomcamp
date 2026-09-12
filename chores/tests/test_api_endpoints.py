@@ -301,3 +301,47 @@ class AssignmentEndpointsTests(TestCase):
         response = self.client.get(reverse('chores:api_assignments') + '?member_id=abc')
         self.assertEqual(response.status_code, 400)
         self.assertIn("error", response.json())
+
+    def test_assignments_unsupported_methods(self):
+        """POST, PUT, and DELETE on /api/assignments/ return 405 Method Not Allowed."""
+        url = reverse('chores:api_assignments')
+        for method in ['post', 'put', 'delete', 'patch']:
+            client_method = getattr(self.client, method)
+            response = client_method(url, data={}, content_type="application/json")
+            self.assertEqual(
+                response.status_code,
+                405,
+                f"Expected HTTP 405 for {method.upper()} on assignments endpoint, got {response.status_code}",
+            )
+
+
+class ResourceEndpointMethodNotAllowedTests(TestCase):
+    """Tests verifying HTTP 405 on invalid HTTP verbs across resource endpoints."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_members_unsupported_methods(self):
+        """PUT, DELETE, and PATCH on /api/members/ return 405 Method Not Allowed."""
+        url = reverse('chores:api_members')
+        for method in ['put', 'delete', 'patch']:
+            client_method = getattr(self.client, method)
+            response = client_method(url, data={}, content_type="application/json")
+            self.assertEqual(
+                response.status_code,
+                405,
+                f"Expected HTTP 405 for {method.upper()} on members endpoint, got {response.status_code}",
+            )
+
+    def test_chores_unsupported_methods(self):
+        """PUT, DELETE, and PATCH on /api/chores/ return 405 Method Not Allowed."""
+        url = reverse('chores:api_chores')
+        for method in ['put', 'delete', 'patch']:
+            client_method = getattr(self.client, method)
+            response = client_method(url, data={}, content_type="application/json")
+            self.assertEqual(
+                response.status_code,
+                405,
+                f"Expected HTTP 405 for {method.upper()} on chores endpoint, got {response.status_code}",
+            )
+

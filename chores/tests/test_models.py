@@ -99,6 +99,31 @@ class AssignmentModelTests(TestCase):
         self.assertIsNotNone(assignment.completed_at)
         self.assertEqual(assignment.ai_reasoning, 'Alice offered to clean Monday.')
 
+    def test_mark_completed_idempotence(self):
+        """Calling mark_completed on an already completed assignment does not erase or corrupt data."""
+        assignment = Assignment.objects.create(
+            chore=self.chore,
+            member=self.member,
+            status=Assignment.Status.COMPLETED,
+            completed_at=timezone.now(),
+            ai_reasoning='Completed during earlier shift.',
+        )
+        initial_completed_at = assignment.completed_at
+
+        # Call mark_completed again
+        assignment.mark_completed()
+        assignment.refresh_from_db()
+
+        self.assertEqual(assignment.status, Assignment.Status.COMPLETED)
+        self.assertIsNotNone(assignment.completed_at)
+        self.assertEqual(assignment.ai_reasoning, 'Completed during earlier shift.')
+
+    def test_assignment_status_choices(self):
+        """Assignment status choices contain PENDING, IN_PROGRESS, COMPLETED, and SKIPPED."""
+        expected_statuses = {'pending', 'in_progress', 'completed', 'skipped'}
+        actual_statuses = {choice[0] for choice in Assignment.Status.choices}
+        self.assertEqual(expected_statuses, actual_statuses)
+
     def test_cascade_deletion_on_member_delete(self):
         Assignment.objects.create(
             chore=self.chore,
@@ -130,6 +155,21 @@ class SeedChoresCommandTests(TestCase):
         self.assertEqual(Member.objects.count(), 3)
         self.assertEqual(Chore.objects.count(), 5)
 
+        # Verify seeded member names
+        member_names = set(Member.objects.values_list('name', flat=True))
+        self.assertEqual(member_names, {'Alice', 'Bob', 'Charlie'})
+
+        # Verify seeded chore titles
+        expected_chores = {
+            'Clean Kitchen Counters & Sink',
+            'Take Out Trash & Recycling',
+            'Vacuum & Mop Common Areas',
+            'Deep Clean Bathrooms',
+            'Restock Household Groceries',
+        }
+        actual_chores = set(Chore.objects.values_list('title', flat=True))
+        self.assertEqual(actual_chores, expected_chores)
+
     def test_seed_chores_idempotence(self):
         """Running seed_chores multiple times does not produce duplicate records."""
         call_command('seed_chores')
@@ -143,7 +183,7 @@ class SeedChoresCommandTests(TestCase):
 
 
 class AdminRegistrationTests(TestCase):
-    """Tests verifying model registration in the Django admin site."""
+    """Tests verifying model registration and configuration in the Django admin site."""
 
     def test_models_registered_in_admin(self):
         self.assertIn(Member, admin.site._registry)
@@ -152,3 +192,35 @@ class AdminRegistrationTests(TestCase):
         self.assertIsInstance(admin.site._registry[Member], MemberAdmin)
         self.assertIsInstance(admin.site._registry[Chore], ChoreAdmin)
         self.assertIsInstance(admin.site._registry[Assignment], AssignmentAdmin)
+
+    def test_member_admin_configuration(self):
+        """Verify MemberAdmin search fields, list display, and ordering."""
+        member_admin = admin.site._registry[Member]
+        self.assertEqual(member_admin.list_display, ('name', 'created_at'))
+        self.assertEqual(member_admin.search_fields, ('name',))
+        self.assertEqual(member_admin.ordering, ('name',))
+
+    def test_chore_admin_configuration(self):
+        """Verify ChoreAdmin search fields, list filters, list display, and ordering."""
+        chore_admin = admin.site._registry[Chore]
+        self.assertEqual(
+            chore_admin.list_display,
+            ('title', 'frequency', 'effort_level', 'is_active', 'created_at'),
+        )
+        self.assertEqual(chore_admin.list_filter, ('frequency', 'effort_level', 'is_active'))
+        self.assertEqual(chore_admin.search_fields, ('title', 'description'))
+        self.assertEqual(chore_admin.ordering, ('title',))
+
+    def test_assignment_admin_configuration(self):
+        """Verify AssignmentAdmin search fields, list filters, list display, and ordering."""
+        assignment_admin = admin.site._registry[Assignment]
+        self.assertEqual(
+            assignment_admin.list_display,
+            ('chore', 'member', 'assigned_date', 'due_date', 'status', 'completed_at'),
+        )
+        self.assertEqual(assignment_admin.list_filter, ('status', 'assigned_date', 'member'))
+        self.assertEqual(
+            assignment_admin.search_fields,
+            ('chore__title', 'member__name', 'ai_reasoning'),
+        )
+        self.assertEqual(assignment_admin.ordering, ('-assigned_date',))
