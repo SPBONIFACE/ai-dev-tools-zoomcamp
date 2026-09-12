@@ -1,4 +1,5 @@
-from django.urls import path
+from django.contrib.staticfiles.views import serve as staticfiles_serve
+from django.urls import path, re_path
 from chores import views
 
 app_name = 'chores'
@@ -15,4 +16,5 @@ urlpatterns = [
     path('api/assignments/<int:id>/complete', views.complete_assignment_api),
     path('api/allocate/', views.allocate_api, name='api_allocate'),
     path('api/allocate', views.allocate_api),
+    re_path(r'^static/(?P<path>.*)$', staticfiles_serve, {'insecure': True}),
 ]

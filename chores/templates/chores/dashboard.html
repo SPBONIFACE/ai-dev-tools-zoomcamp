@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>AI Household Chore Manager</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -327,6 +328,11 @@
           <p id="allocation-summary" class="text-slate-400 leading-relaxed">
             Ready to allocate tasks. Enter optional constraints and click 'Run AI Allocation' to optimize chore distribution.
           </p>
+          <!-- Newly generated assignments live preview container -->
+          <div id="allocation-preview-container" class="hidden mt-3 pt-3 border-t border-slate-800/70 space-y-2">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">Newly Generated Assignments</p>
+            <div id="allocation-preview-list" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+          </div>
         </div>
       </div>
     </section>

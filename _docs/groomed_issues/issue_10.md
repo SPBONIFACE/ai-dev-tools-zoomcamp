@@ -27,11 +27,26 @@ Implement client-side JavaScript (`static/chores/dashboard.js`) to power the int
 - **Double Submission**: Disable "Run AI Allocation" button while request is in flight to prevent duplicate submissions.
 
 ## 3. Acceptance Criteria
-- [ ] Chore Board loads assignments from `GET /api/assignments/` and renders them into Pending, In Progress, and Completed columns.
-- [ ] Clicking "Mark Done" updates assignment status via `POST /api/assignments/<id>/complete/` without reloading the page.
-- [ ] Submitting natural language notes triggers `POST /api/allocate/` and displays reasoning summary and updated assignments.
-- [ ] Loading states (spinners / disabled buttons) are active during API calls.
-- [ ] Manual browser check: dashboard loads at `http://localhost:8000/` and interactive buttons function as expected.
+- [x] Chore Board loads assignments from `GET /api/assignments/` and renders them into Pending, In Progress, and Completed columns.
+- [x] Clicking "Mark Done" updates assignment status via `POST /api/assignments/<id>/complete/` without reloading the page.
+- [x] Submitting natural language notes triggers `POST /api/allocate/` and displays reasoning summary and updated assignments.
+- [x] Loading states (spinners / disabled buttons) are active during API calls.
+- [x] Manual browser check: dashboard loads at `http://localhost:8000/` and interactive buttons function as expected.
 
 ## 4. Out of Scope
 - [TASK-12 / Issue #12](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/12) — Docker container deployment.
+
+---
+
+## 5. Engineer Comment (Status: Implemented & Open for Review)
+- Created `chores/static/chores/dashboard.js`:
+  - Dynamically loads and renders assignments from `GET /api/assignments/` into the three board columns (`#pending-column`, `#in-progress-column`, `#completed-column`).
+  - Implements single-click "Mark Done" button on pending/in-progress cards calling `POST /api/assignments/<id>/complete/` with visual transition, dynamic status badge updates, and updates to the metrics bar.
+  - Implements AI Allocator panel submission calling `POST /api/allocate/` with CSRF handling, spinner/disabled loading states, live preview of reasoning summary and generated assignments, and automatic board refresh.
+  - Includes user-friendly error alerts (`#allocation-error`, `#allocation-error-message`), empty state fallbacks, and double-submission protection.
+- Updated `chores/templates/chores/dashboard.html` to include CSRF meta tag, live assignment preview container in `#allocation-results`, and deferred script tag loading `dashboard.js`.
+- Configured static route in `chores/urls.py` ensuring static assets are served across test and local development environments.
+- Authored 15 integration tests in `chores/tests/test_dashboard_interactive.py` covering static file finder resolution, HTTP static file serving, template script/meta tags, DOM column IDs and badges, empty states, form controls, error alerts, and backing API complete/allocate workflows.
+- All 134 test suite tests pass cleanly via `uv run python manage.py test`.
+- Issue remains open for QA review.
+
