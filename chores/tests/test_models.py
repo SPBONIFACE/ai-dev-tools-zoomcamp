@@ -1,10 +1,11 @@
-from django.test import TestCase
-from django.utils import timezone
-from django.db import IntegrityError
 from django.contrib import admin
 from django.core.management import call_command
-from chores.models import Member, Chore, Assignment
-from chores.admin import MemberAdmin, ChoreAdmin, AssignmentAdmin
+from django.db import IntegrityError
+from django.test import TestCase
+from django.utils import timezone
+
+from chores.admin import AssignmentAdmin, ChoreAdmin, MemberAdmin
+from chores.models import Assignment, Chore, Member
 
 
 class MemberModelTests(TestCase):
@@ -109,6 +110,7 @@ class AssignmentModelTests(TestCase):
             ai_reasoning='Completed during earlier shift.',
         )
         initial_completed_at = assignment.completed_at
+        self.assertIsNotNone(initial_completed_at)
 
         # Call mark_completed again
         assignment.mark_completed()

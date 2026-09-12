@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+    environment:
+      - PYTHONUNBUFFERED=1
+      - AI_PROVIDER=mock
+    restart: unless-stopped
