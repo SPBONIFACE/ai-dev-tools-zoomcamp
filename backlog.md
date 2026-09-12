@@ -26,7 +26,7 @@ A prioritized backlog for developing the application in Django, derived from the
   - Define standard inputs (active chores, members, recent workload, user natural language notes).
   - Define structured output schema (Pydantic / dataclasses: list of assignments with explanation).
 
-- [ ] **TASK-05: Build Deterministic Mock Allocation Engine**
+- [x] **TASK-05: Build Deterministic Mock Allocation Engine**
   - Implement rule-based assignment balancer (effort points + availability heuristics).
   - Ensures tests and local development run reliably offline with zero API costs.
 
