@@ -22,7 +22,7 @@ A prioritized backlog for developing the application in Django, derived from the
 ---
 
 ## Sprint 2: AI Allocation Engine (Mock & LLM)
-- [ ] **TASK-04: Implement Allocation Service Interface**
+- [x] **TASK-04: Implement Allocation Service Interface**
   - Define standard inputs (active chores, members, recent workload, user natural language notes).
   - Define structured output schema (Pydantic / dataclasses: list of assignments with explanation).
 

@@ -1,0 +1,54 @@
+# [Sprint 3] TASK-08: Complete & Allocate Actions
+
+## 1. Description / Goal
+Implement state mutation and allocation action endpoints: marking an assignment completed (`POST /api/assignments/<id>/complete/`) and triggering smart chore allocation (`POST /api/allocate/`).
+
+## 2. Specification & Edge Cases
+
+**Target File Location**: `chores/views.py` & `chores/urls.py`
+
+### Action Endpoints Specification:
+1. `POST /api/assignments/<id>/complete/`
+   - **Request**: Empty body or `{"status": "completed"}`.
+   - **Response**: `200 OK` with updated assignment JSON (`id`, `status="completed"`, `completed_at` timestamp).
+   - **Error Handling**: `404 Not Found` if assignment ID does not exist.
+2. `POST /api/allocate/`
+   - **Request Payload**:
+     ```json
+     {
+       "user_notes": "Alice is away Friday to Sunday.",
+       "dry_run": false
+     }
+     ```
+   - **Workflow**:
+     - Fetch active members and active chores from SQLite database.
+     - Calculate recent workload history per member (past 14 days).
+     - Instantiate allocation engine (`LLMAllocationEngine` or `MockAllocationEngine`).
+     - Execute allocation engine with request.
+     - If `dry_run == false`: persist created `Assignment` instances to database with `status="pending"` and store `ai_reasoning`.
+   - **Response Payload**: `200 OK`
+     ```json
+     {
+       "success": true,
+       "engine_used": "mock",
+       "assignments_created": 5,
+       "raw_reasoning_summary": "...",
+       "assignments": [...]
+     }
+     ```
+
+### Edge Cases & Validation Rules:
+- **Already Completed Assignment**: Calling `/complete/` on an already completed assignment is idempotent; update timestamp and return `200 OK`.
+- **No Members or No Chores**: If DB has no active members or chores, return `400 Bad Request` with message: *"Cannot run allocation without active members and chores."*.
+- **Dry Run Mode**: If `dry_run == true`, execute engine and return proposed assignments without writing records to `db.sqlite3`.
+
+## 3. Acceptance Criteria
+- [ ] Endpoint `POST /api/assignments/<id>/complete/` marks assignment completed, sets `completed_at`, and returns HTTP 200.
+- [ ] Endpoint `POST /api/assignments/<invalid_id>/complete/` returns HTTP 404.
+- [ ] Endpoint `POST /api/allocate/` runs allocation engine with natural language notes and returns HTTP 200 with generated assignments.
+- [ ] Persisted assignments are saved in SQLite database when `dry_run=false`.
+- [ ] Integration tests in `chores/tests/test_api_actions.py` verify completion workflow and allocation persistence.
+- [ ] All unit and integration tests pass cleanly via `uv run python manage.py test`.
+
+## 4. Out of Scope
+- [TASK-10 / Issue #10](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/10) — Dashboard UI buttons for completing chores and triggering AI allocation.

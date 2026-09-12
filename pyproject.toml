@@ -1,0 +1,10 @@
+[project]
+name = "ai-devops-m1"
+version = "0.1.0"
+description = "AI Household Chore Manager"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.0",
+    "pydantic>=2.0",
+]
