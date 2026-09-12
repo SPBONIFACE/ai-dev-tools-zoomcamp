@@ -28,18 +28,29 @@ Implement a concrete allocation engine `MockAllocationEngine` that inherits from
 - **Engine Identifier**: Return `engine_used="mock"` in `AllocationResponse`.
 
 ## 3. Acceptance Criteria
-- [ ] `MockAllocationEngine` class inherits from `BaseAllocationEngine` in `chores/allocation/mock_engine.py`.
-- [ ] `MockAllocationEngine.allocate(request)` returns a valid `AllocationResponse` containing `assignments`, `raw_reasoning_summary`, and `engine_used="mock"`.
-- [ ] Member effort points are balanced across chores deterministically.
-- [ ] Members detected as unavailable in `user_notes` are excluded from assignments unless all members are unavailable.
-- [ ] Ties in workload score are broken deterministically by member name (alphabetical order).
-- [ ] Unit tests in `chores/tests/test_mock_engine.py` verify:
+- [x] `MockAllocationEngine` class inherits from `BaseAllocationEngine` in `chores/allocation/mock_engine.py`.
+- [x] `MockAllocationEngine.allocate(request)` returns a valid `AllocationResponse` containing `assignments`, `raw_reasoning_summary`, and `engine_used="mock"`.
+- [x] Member effort points are balanced across chores deterministically.
+- [x] Members detected as unavailable in `user_notes` are excluded from assignments unless all members are unavailable.
+- [x] Ties in workload score are broken deterministically by member name (alphabetical order).
+- [x] Unit tests in `chores/tests/test_mock_engine.py` verify:
   - Equal effort distribution on balanced rosters.
   - Correct exclusion of unavailable members based on natural language keywords.
   - Fallback behavior when all members are unavailable.
   - Deterministic repeatability (same input produces identical output).
-- [ ] All unit tests pass cleanly via `uv run python manage.py test`.
+- [x] All unit tests pass cleanly via `uv run python manage.py test`.
 
 ## 4. Out of Scope
 - [TASK-06 / Issue #6](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/6) — LLM client integration (OpenAI / Gemini / Groq).
 - [TASK-08 / Issue #8](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/8) — API endpoint `POST /api/allocate/`.
+
+---
+
+## 5. Engineer Comment (Status: Implemented & Open for Review)
+- Implemented `MockAllocationEngine` in `chores/allocation/mock_engine.py` inheriting from `BaseAllocationEngine`.
+- Implemented workload tracking initialized from `WorkloadHistory` (defaulting untracked members to 0).
+- Implemented natural language availability parsing in `user_notes` with negative indicator matching (`away`, `busy`, `vacation`, `out of town`, `traveling`, `sick`, `unavailable`), regex word boundaries to avoid false positives, and fallback when all members are unavailable.
+- Implemented deterministic chore sorting by `effort_level` descending and tie-breaking by alphabetical member name.
+- Exported `MockAllocationEngine` in `chores/allocation/__init__.py`.
+- Created 15 comprehensive unit tests in `chores/tests/test_mock_engine.py`.
+- All 44 tests pass cleanly via `uv run python manage.py test`.

@@ -8,6 +8,7 @@ from chores.allocation.schemas import (
     InvalidAllocationRequestError,
 )
 from chores.allocation.interface import BaseAllocationEngine
+from chores.allocation.mock_engine import MockAllocationEngine
 
 __all__ = [
     "MemberData",
@@ -18,4 +19,6 @@ __all__ = [
     "AllocationResponse",
     "InvalidAllocationRequestError",
     "BaseAllocationEngine",
+    "MockAllocationEngine",
 ]
+
