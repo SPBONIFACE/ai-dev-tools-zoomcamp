@@ -87,5 +87,23 @@ Configure containerization (`Dockerfile`, `.dockerignore`, `docker-compose.yml`)
 - Verified:
   - `make lint` executes `uvx ruff check .` and passes with zero errors ("All checks passed!").
   - `make test` executes `uv run python manage.py test` and passes 100% (148/148 tests passing in ~0.15s).
-- Issue remains open for QA review.
+
+---
+
+## 6. QA Verdict: PASS
+- [x] `Dockerfile` builds a working image cleanly via `docker build -t chore-manager .` using a multi-stage build, `ghcr.io/astral-sh/uv:latest` binary copy, and `python:3.11-slim` or `3.12-slim`. - PASS
+- [x] `.dockerignore` exists and excludes `.venv/`, `__pycache__/`, `.git/`, `db.sqlite3`, and tool caches from build context. - PASS
+- [x] `docker-compose.yml` configures service `web`, maps port `8000:8000`, mounts `./db.sqlite3:/app/db.sqlite3`, and sets `PYTHONUNBUFFERED=1` and `AI_PROVIDER=mock`. - PASS
+- [x] `Makefile` contains valid `.PHONY` targets: `install`, `run`, `test`, `migrate`, `lint`, `docker-build`, `docker-up`, `docker-down`. - PASS
+- [x] Executing `make lint` runs `ruff check .` with zero errors. - PASS
+- [x] Executing `make test` executes `uv run python manage.py test` and passes 100%. - PASS
+- [x] Executing `make docker-up` (or `docker compose up -d`) starts the web container, and `http://localhost:8000/` returns HTTP 200. - PASS
+- [x] Data created inside the container (e.g. creating a chore or completing an assignment) persists to host `./db.sqlite3` across `docker compose down` and restart. - PASS
+
+Tests: `uv run python manage.py test`, 148 passed, 0 failed
+
+---
+
+## 7. Orchestrator Status: CLOSED
+Issue #12 verified and officially closed. Backlog updated.
 

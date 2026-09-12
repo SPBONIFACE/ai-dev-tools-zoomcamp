@@ -66,7 +66,7 @@ A prioritized backlog for developing the application in Django, derived from the
   - Integration tests for API endpoints and the mock AI allocator.
   - Verify complete test pass via `python manage.py test`.
 
-- [ ] **TASK-12: Containerization & Automation**
+- [x] **TASK-12: Containerization & Automation**
   - Create multi-stage `Dockerfile` and `docker-compose.yml` with SQLite volume mount.
   - Create `Makefile` with standard developer targets (`run`, `test`, `migrate`, `lint`).
 
