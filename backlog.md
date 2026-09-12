@@ -50,7 +50,7 @@ A prioritized backlog for developing the application in Django, derived from the
 ---
 
 ## Sprint 4: Web Dashboard Interface
-- [ ] **TASK-09: Build Dashboard Template**
+- [x] **TASK-09: Build Dashboard Template**
   - Create `templates/chores/dashboard.html` styled with Tailwind CSS.
   - Header with household overview and quick metrics.
 
