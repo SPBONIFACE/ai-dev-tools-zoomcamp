@@ -29,16 +29,27 @@ Implement `LLMAllocationEngine` inheriting from `BaseAllocationEngine`. The LLM 
 - **LLM Rate Limits / Timeouts**: Catch `Exception`, log warning, and complete allocation via mock engine without throwing a 500 error to the client.
 
 ## 3. Acceptance Criteria
-- [ ] `LLMAllocationEngine` inherits from `BaseAllocationEngine` in `chores/allocation/llm_engine.py`.
-- [ ] Structured prompt generator formats request into JSON schema format for LLM inference.
-- [ ] Robust fallback to `MockAllocationEngine` occurs automatically when API key is missing or API call fails.
-- [ ] Return object clearly identifies `engine_used` (`"llm"` when successful, `"mock (fallback)"` on API failure).
-- [ ] Unit tests in `chores/tests/test_llm_engine.py` using mock/patching verify:
+- [x] `LLMAllocationEngine` inherits from `BaseAllocationEngine` in `chores/allocation/llm_engine.py`.
+- [x] Structured prompt generator formats request into JSON schema format for LLM inference.
+- [x] Robust fallback to `MockAllocationEngine` occurs automatically when API key is missing or API call fails.
+- [x] Return object clearly identifies `engine_used` (`"llm"` when successful, `"mock (fallback)"` on API failure).
+- [x] Unit tests in `chores/tests/test_llm_engine.py` using mock/patching verify:
   - Successful LLM structured JSON response parsing.
   - Automatic fallback when API key is missing.
   - Automatic fallback when API call raises an exception or returns invalid JSON.
-- [ ] All unit tests pass cleanly offline via `uv run python manage.py test`.
+- [x] All unit tests pass cleanly offline via `uv run python manage.py test`.
 
 ## 4. Out of Scope
 - [TASK-07 / Issue #7](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/7) — Member and Chore REST endpoints.
 - [TASK-08 / Issue #8](https://github.com/SPBONIFACE/ai-dev-tools-zoomcamp/issues/8) — API endpoint `POST /api/allocate/`.
+
+---
+
+## 5. Engineer Comment (Status: Implemented & Open for Review)
+- Implemented `LLMAllocationEngine` in `chores/allocation/llm_engine.py` inheriting from `BaseAllocationEngine`.
+- Configurable AI providers supported (`openai`, `gemini`, `groq`, `mock`) with API key resolution from Django settings (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `AI_API_KEY`) and environment variables.
+- Structured prompt generation injecting household roster, active chores, workload history, and user natural language notes with JSON schema expectations.
+- Automatic fallback to `MockAllocationEngine` returning `engine_used="mock (fallback)"` on missing API key, network timeout, HTTP error, malformed JSON, mismatched member/chore IDs, or duplicate/omitted chore assignments.
+- Exported `LLMAllocationEngine` in `chores/allocation/__init__.py`.
+- Authored 28 comprehensive unit tests in `chores/tests/test_llm_engine.py` using `unittest.mock` to verify prompt generation, provider REST calls, JSON parsing with and without markdown fences, and all fallback triggers.
+- All 72 tests pass cleanly via `uv run python manage.py test`.

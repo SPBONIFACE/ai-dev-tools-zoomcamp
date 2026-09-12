@@ -9,6 +9,7 @@ from chores.allocation.schemas import (
 )
 from chores.allocation.interface import BaseAllocationEngine
 from chores.allocation.mock_engine import MockAllocationEngine
+from chores.allocation.llm_engine import LLMAllocationEngine
 
 __all__ = [
     "MemberData",
@@ -20,5 +21,5 @@ __all__ = [
     "InvalidAllocationRequestError",
     "BaseAllocationEngine",
     "MockAllocationEngine",
+    "LLMAllocationEngine",
 ]
-
