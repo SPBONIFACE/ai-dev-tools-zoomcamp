@@ -41,14 +41,20 @@ async def websocket_board_endpoint(
                 continue
 
             # If message contains board operations, persist them in the store
+            ops = None
             if data.get("type") == "board_ops" and "ops" in data:
+                ops = data["ops"]
+            elif data.get("type") == "broadcast" and data.get("event") == "ops" and "payload" in data:
+                ops = data["payload"].get("ops")
+
+            if ops:
                 session_id = store.sessions_by_token.get(token)
                 if session_id and session_id in store.sessions:
                     session = store.sessions[session_id]
                     if not session.link_revoked and session.status != "completed":
                         if session_id not in store.board_elements:
                             store.board_elements[session_id] = {}
-                        for op in data["ops"]:
+                        for op in ops:
                             if op.get("type") == "upsert" and op.get("el"):
                                 el_id = op["el"].get("id")
                                 if el_id:

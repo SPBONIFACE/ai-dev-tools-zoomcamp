@@ -18,7 +18,7 @@ import {
   NotebookPen,
   Hand,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { pushOps } from "@/lib/board.functions";
 import { updateSession } from "@/lib/sessions.functions";
 import {
@@ -95,7 +95,12 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   const [notesOpen, setNotesOpen] = useState(false);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const sendWs = useCallback((msg: any) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(msg));
+    }
+  }, []);
   const pendingRef = useRef<Map<string, BoardOp>>(new Map());
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undoRef = useRef<Record<string, BoardEl>[]>([]);
@@ -175,9 +180,9 @@ export default function BoardCanvas(props: BoardCanvasProps) {
       if (opts?.history !== false) snapshot();
       applyOps(ops);
       queue(ops);
-      channelRef.current?.send({ type: "broadcast", event: "ops", payload: { ops, by: myId } });
+      sendWs({ type: "broadcast", event: "ops", payload: { ops, by: myId } });
     },
-    [applyOps, myId, queue, readOnly, snapshot],
+    [applyOps, myId, queue, readOnly, sendWs, snapshot],
   );
 
   const restore = useCallback(
@@ -188,9 +193,9 @@ export default function BoardCanvas(props: BoardCanvasProps) {
       if (!ops.length) return;
       applyOps(ops);
       queue(ops);
-      channelRef.current?.send({ type: "broadcast", event: "ops", payload: { ops, by: myId } });
+      sendWs({ type: "broadcast", event: "ops", payload: { ops, by: myId } });
     },
-    [applyOps, myId, queue],
+    [applyOps, myId, queue, sendWs],
   );
 
   const undo = useCallback(() => {
@@ -212,42 +217,73 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   /* ---------------- realtime ---------------- */
 
   useEffect(() => {
-    const channel = supabase.channel(`board:${token}`, {
-      config: { broadcast: { self: false }, presence: { key: myId } },
-    });
-    channelRef.current = channel;
+    let ws: WebSocket;
+    try {
+      ws = api.boards.createWebSocket(token, displayName, isOwner ? "interviewer" : "candidate");
+      wsRef.current = ws;
 
-    channel
-      .on("broadcast", { event: "ops" }, ({ payload }) => {
-        applyOps((payload as { ops: BoardOp[] }).ops);
-      })
-      .on("broadcast", { event: "cursor" }, ({ payload }) => {
-        const p = payload as { id: string; x: number; y: number };
-        setPeers((prev) => prev.map((q) => (q.id === p.id ? { ...q, x: p.x, y: p.y } : q)));
-      })
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ name: string; color: string; isOwner: boolean }>();
-        const list: Peer[] = [];
-        for (const [key, entries] of Object.entries(state)) {
-          const e = entries[0];
-          if (!e || key === myId) continue;
-          list.push({ id: key, name: e.name, color: e.color, isOwner: e.isOwner });
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "broadcast" && data.event === "ops" && data.payload?.ops) {
+            applyOps(data.payload.ops);
+          } else if (data.type === "board_ops" && data.ops) {
+            applyOps(data.ops);
+          } else if (data.type === "broadcast" && data.event === "cursor" && data.payload) {
+            const p = data.payload;
+            if (p.id === myId) return;
+            setPeers((prev) => {
+              const existing = prev.find((q) => q.id === p.id);
+              if (existing) {
+                return prev.map((q) => (q.id === p.id ? { ...q, x: p.x, y: p.y } : q));
+              }
+              return [
+                ...prev,
+                {
+                  id: p.id,
+                  name: p.name || "Participant",
+                  color: p.color || colorForName(p.id),
+                  isOwner: !!p.isOwner,
+                  x: p.x,
+                  y: p.y,
+                },
+              ];
+            });
+          } else if (data.type === "presence") {
+            if (data.action === "join" && data.participant) {
+              const pName = data.participant.name || "Participant";
+              setPeers((prev) => {
+                if (prev.some((q) => q.name === pName)) return prev;
+                return [
+                  ...prev,
+                  {
+                    id: pName,
+                    name: pName,
+                    color: colorForName(pName),
+                    isOwner: data.participant.role === "interviewer",
+                  },
+                ];
+              });
+            } else if (data.action === "leave" && data.participant) {
+              const pName = data.participant.name;
+              setPeers((prev) => prev.filter((q) => q.name !== pName));
+            }
+          }
+        } catch (err) {
+          console.error("Error processing websocket message:", err);
         }
-        setPeers((prev) =>
-          list.map((p) => ({ ...p, ...(prev.find((q) => q.id === p.id) ?? {}) , name: p.name, color: p.color })),
-        );
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          channel.track({ name: displayName, color: myColor, isOwner });
-        }
-      });
+      };
+    } catch (err) {
+      console.error("Failed to connect websocket:", err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
-      channelRef.current = null;
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
     };
-  }, [applyOps, displayName, isOwner, myColor, myId, token]);
+  }, [applyOps, displayName, isOwner, myId, token]);
 
   /* ---------------- pointer interaction ---------------- */
 
@@ -291,10 +327,10 @@ export default function BoardCanvas(props: BoardCanvasProps) {
     const now = Date.now();
     if (now - lastCursor.current > 45) {
       lastCursor.current = now;
-      channelRef.current?.send({
+      sendWs({
         type: "broadcast",
         event: "cursor",
-        payload: { id: myId, x: w.x, y: w.y },
+        payload: { id: myId, name: displayName, color: myColor, isOwner, x: w.x, y: w.y },
       });
     }
     if (!drag) return;
