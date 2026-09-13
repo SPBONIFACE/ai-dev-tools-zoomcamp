@@ -1,16 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  listSessions,
-  createSession,
-  updateSession,
-  deleteSession,
-  type SessionRow,
-} from "@/lib/sessions.functions";
-import { supabase } from "@/integrations/supabase/client";
+import { api, type SessionRow } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,10 +39,6 @@ function statusTone(status: string) {
 function Dashboard() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const fetchSessions = useServerFn(listSessions);
-  const create = useServerFn(createSession);
-  const update = useServerFn(updateSession);
-  const remove = useServerFn(deleteSession);
 
   const [title, setTitle] = useState("System design interview");
   const [candidate, setCandidate] = useState("");
@@ -58,30 +46,36 @@ function Dashboard() {
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ["sessions"],
-    queryFn: () => fetchSessions(),
+    queryFn: () => api.sessions.list(),
   });
 
   const createMut = useMutation({
     mutationFn: (v: { title: string; candidate_name: string; role_title: string }) =>
-      create({ data: v }),
+      api.sessions.create(v),
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["sessions"] });
       setCandidate("");
       setRole("");
+      toast.success("Session created!");
       navigate({ to: "/b/$token", params: { token: row.join_token } });
     },
-    onError: () => toast.error("Could not create the session"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not create the session"),
   });
 
   const updateMut = useMutation({
     mutationFn: (v: { id: string; status?: "draft" | "live" | "completed"; link_revoked?: boolean }) =>
-      update({ data: v }),
+      api.sessions.update(v.id, v),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions"] }),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not update the session"),
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions"] }),
+    mutationFn: (id: string) => api.sessions.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sessions"] });
+      toast.success("Session deleted");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not delete session"),
   });
 
   function linkFor(s: SessionRow) {
@@ -91,7 +85,7 @@ function Dashboard() {
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
-    await supabase.auth.signOut();
+    await api.auth.logout();
     navigate({ to: "/auth", replace: true });
   }
 

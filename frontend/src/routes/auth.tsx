@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,15 +37,18 @@ function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("interviewer@example.com");
+  const [password, setPassword] = useState("password123");
   const [busy, setBusy] = useState(false);
   const dest = safePath(search.redirect);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: dest, replace: true });
-    });
+    if (api.auth.isAuthenticated()) {
+      api.auth
+        .me()
+        .then(() => navigate({ to: dest, replace: true }))
+        .catch(() => api.auth.clearToken());
+    }
   }, [dest, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -54,19 +56,11 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + dest },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          toast.success("Check your email to confirm your account.");
-          return;
-        }
+        await api.auth.signup({ email, password });
+        toast.success("Account created successfully!");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await api.auth.login({ email, password });
+        toast.success("Signed in successfully!");
       }
       navigate({ to: dest, replace: true });
     } catch (err) {
@@ -74,19 +68,6 @@ function AuthPage() {
     } finally {
       setBusy(false);
     }
-  }
-
-  async function handleGoogle() {
-    sessionStorage.setItem("post_auth_path", dest);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error("Google sign-in failed");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: dest, replace: true });
   }
 
   return (
@@ -97,6 +78,10 @@ function AuthPage() {
         <h1 className="mt-2 text-2xl font-semibold">
           {mode === "signin" ? "Sign in to your boards" : "Create an interviewer account"}
         </h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Connected to local FastAPI backend ({import.meta.env.VITE_API_URL || "http://localhost:8091"})
+        </p>
+
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -126,15 +111,10 @@ function AuthPage() {
           </Button>
         </form>
 
-        <div className="my-5 flex items-center gap-3">
-          <span className="h-px flex-1 bg-border" />
-          <span className="label-mono">or</span>
-          <span className="h-px flex-1 bg-border" />
+        <div className="mt-4 rounded-md border border-border/60 bg-surface-raised/40 p-3 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">Seed credentials:</span>{" "}
+          <code>interviewer@example.com</code> / <code>password123</code>
         </div>
-
-        <Button variant="secondary" className="w-full" onClick={handleGoogle}>
-          Continue with Google
-        </Button>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {mode === "signin" ? "No account yet?" : "Already have an account?"}{" "}

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SHAPES } from "@/lib/board-types";
@@ -33,7 +33,14 @@ function Home() {
   const [code, setCode] = useState("");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    if (api.auth.isAuthenticated()) {
+      api.auth
+        .me()
+        .then(() => setSignedIn(true))
+        .catch(() => setSignedIn(false));
+    } else {
+      setSignedIn(false);
+    }
   }, []);
 
   return (
