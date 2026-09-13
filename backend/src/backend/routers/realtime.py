@@ -48,20 +48,10 @@ async def websocket_board_endpoint(
                 ops = data["payload"].get("ops")
 
             if ops:
-                session_id = store.sessions_by_token.get(token)
-                if session_id and session_id in store.sessions:
-                    session = store.sessions[session_id]
-                    if not session.link_revoked and session.status != "completed":
-                        if session_id not in store.board_elements:
-                            store.board_elements[session_id] = {}
-                        for op in ops:
-                            if op.get("type") == "upsert" and op.get("el"):
-                                el_id = op["el"].get("id")
-                                if el_id:
-                                    store.board_elements[session_id][el_id] = op["el"]
-                            elif op.get("type") == "delete" and op.get("id"):
-                                store.board_elements[session_id].pop(op["id"], None)
-                        await websocket.send_json({"type": "ops_ack", "status": "ok"})
+                session = store.get_session_by_token(token)
+                if session and not session.link_revoked and session.status != "completed":
+                    store.apply_board_ops(session.id, ops)
+                    await websocket.send_json({"type": "ops_ack", "status": "ok"})
 
             # Broadcast to all other peers in the room
             for peer in list(store.room_connections.get(token, [])):

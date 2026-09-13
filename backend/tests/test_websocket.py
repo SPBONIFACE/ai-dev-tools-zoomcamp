@@ -30,5 +30,7 @@ def test_websocket_ops_persistence():
         ack = ws.receive_json()
         assert ack["type"] == "ops_ack"
 
-        session_id = store.sessions_by_token[token]
-        assert "node-ws-persisted" in store.board_elements[session_id]
+        session = store.get_session_by_token(token)
+        assert session is not None
+        elements = store.get_elements_for_session(session.id)
+        assert any(el["id"] == "node-ws-persisted" for el in elements)
