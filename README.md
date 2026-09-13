@@ -12,7 +12,7 @@ This project is part of **DataTalksClub's AI DevOps Zoomcamp (Module 1)**, explo
 
 ## AI Household Chore Manager 
 
-A smart shared household chore management tool that balances workloads, schedules recurring tasks, and uses an AI assistant to allocate chores fairly based on natural language availability and member preferences. 
+The objective of the course was to buold an AI Household Chore Managrr: a smart shared household chore management tool that balances workloads, schedules recurring tasks, and uses an AI assistant to allocate chores fairly based on natural language availability and member preferences. 
 
 ---
 
