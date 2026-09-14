@@ -4,6 +4,8 @@
 
 Built as part of the **[AI Dev Tools Zoomcamp](https://datatalks.club)** (Module 2: *Build and Ship a Full-Stack App with AI Coding Assistants*).
 
+![Loopback Platform Demo](docs/images/app-demo.png)
+
 ---
 
 ## The Problem
