@@ -64,7 +64,7 @@ services:
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/etc/grafana/dashboards:ro
     ports:
-      - "3001:3000"   # Mapped to host port 3001
+      - "3002:3000"   # Mapped to host port 3002
     depends_on:
       - prometheus
       - loki

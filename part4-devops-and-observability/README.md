@@ -91,9 +91,9 @@ docker compose up -d
 | **Prometheus** | `9090` | Time-series metrics storage |
 | **Loki** | `3100` | Log aggregation |
 | **Tempo** | `3200` | Distributed traces |
-| **Grafana** | `3001` (login: `admin` / `admin`) | Unified dashboards & alert rules |
+| **Grafana** | `3002` (login: `admin` / `admin`) | Unified dashboards & alert rules |
 
-Open [http://localhost:3001](http://localhost:3001) to view the pre-provisioned **System Design Canvas — Application Overview** dashboard with environment and version dropdown filters.
+Open [http://localhost:3002](http://localhost:3002) to view the pre-provisioned **System Design Canvas — Application Overview** dashboard with environment and version dropdown filters.
 
 ---
 
