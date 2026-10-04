@@ -19,40 +19,46 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 15,
+            "drawStyle": "bars",
+            "fillOpacity": 60,
             "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
             "showPoints": "auto",
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": { "group": "A", "mode": "normal" }
           },
           "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "200" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "502" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "id": 1,
       "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "single", "sort": "none" }
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "sum(increase(sdip_sdip_sessions_created_total_total{environment=~\"$environment\"}[5m]))",
-          "legendFormat": "Sessions Created (5m)",
+          "expr": "sum by (http_status_code) (increase(sdip_http_server_duration_milliseconds_count[5m]))",
+          "legendFormat": "HTTP {{http_status_code}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Interview Sessions Created per 5 min",
+      "title": "HTTP Requests by Status Code (2xx vs 4xx vs 5xx)",
       "type": "timeseries"
     },
     {
@@ -65,15 +71,15 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 200 }
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
             ]
           },
           "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
       "id": 2,
       "options": {
         "colorMode": "value",
@@ -87,13 +93,54 @@
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "sum(sdip_sdip_active_participants{environment=~\"$environment\"})",
+          "expr": "sum(sdip_http_server_active_requests) or vector(0)",
+          "legendFormat": "Active HTTP Requests",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Active In-Flight Requests",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1 },
+              { "color": "yellow", "value": 50 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "editorMode": "code",
+          "expr": "sum(sdip_sdip_active_participants) or vector(0)",
           "legendFormat": "Active Participants",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Active Interview Participants",
+      "title": "Active WebSocket Participants",
       "type": "stat"
     },
     {
@@ -122,7 +169,7 @@
         "overrides": []
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "id": 3,
+      "id": 4,
       "options": {
         "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "single", "sort": "none" }
@@ -131,13 +178,13 @@
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "sum(increase(sdip_sdip_board_operations_total_total{environment=~\"$environment\"}[5m]))",
-          "legendFormat": "Canvas Elements Created (5m)",
+          "expr": "sum(increase(sdip_sdip_sessions_created_total_total[5m])) or vector(0)",
+          "legendFormat": "Sessions Created (5m)",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Canvas Elements Created per 5 min",
+      "title": "Interview Sessions Created per 5 min",
       "type": "timeseries"
     },
     {
@@ -166,7 +213,7 @@
         "overrides": []
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "id": 4,
+      "id": 5,
       "options": {
         "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "single", "sort": "none" }
@@ -175,7 +222,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "sum(increase(sdip_sdip_operation_failures_total_total{environment=~\"$environment\"}[5m]))",
+          "expr": "sum(increase(sdip_sdip_operation_failures_total_total[5m])) or vector(0)",
           "legendFormat": "Operation Failures (5m)",
           "range": true,
           "refId": "A"
@@ -194,12 +241,12 @@
       {
         "current": { "selected": true, "text": "All", "value": "$__all" },
         "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "definition": "label_values(sdip_sdip_sessions_created_total_total, environment)",
+        "definition": "label_values(sdip_target_info, deployment_environment_name)",
         "hide": 0,
         "includeAll": true,
         "multi": false,
         "name": "environment",
-        "query": { "query": "label_values(sdip_sdip_sessions_created_total_total, environment)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
+        "query": { "query": "label_values(sdip_target_info, deployment_environment_name)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
         "refresh": 1,
         "type": "query"
       }
@@ -210,5 +257,5 @@
   "timezone": "browser",
   "title": "System Design Canvas — Application Overview",
   "uid": "sdip-overview",
-  "version": 1
+  "version": 2
 }
