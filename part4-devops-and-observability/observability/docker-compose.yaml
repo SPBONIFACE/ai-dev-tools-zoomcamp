@@ -1,0 +1,77 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.108.0
+    container_name: sdip-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics exporter
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - observability-net
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: sdip-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    networks:
+      - observability-net
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: sdip-loki
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - observability-net
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: sdip-tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo.yaml:ro
+    ports:
+      - "3200:3200"   # Tempo HTTP query
+    networks:
+      - observability-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: sdip-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+    ports:
+      - "3001:3000"   # Mapped to host port 3001
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - observability-net
+
+networks:
+  observability-net:
+    driver: bridge

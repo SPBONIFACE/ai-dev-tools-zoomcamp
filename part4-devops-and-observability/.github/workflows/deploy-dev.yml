@@ -1,0 +1,153 @@
+name: Part 4 — Continuous Delivery to Dev
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'part4-devops-and-observability/**'
+      - '.github/workflows/part4-deploy-dev.yml'
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ai-dev-tool-zoomcamp
+  REGION: europe-west9
+  SERVICE_DEV: interview-canvas-dev
+  REGISTRY: europe-west9-docker.pkg.dev
+
+jobs:
+  # ==========================================
+  # JOB 1: Backend Tests
+  # ==========================================
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run Pytest
+        run: |
+          cd part4-devops-and-observability/backend
+          uv sync
+          OTEL_ENABLED=false uv run pytest -v
+
+  # ==========================================
+  # JOB 2: Frontend Build
+  # ==========================================
+  frontend-tests:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install & Build Frontend
+        run: |
+          cd part4-devops-and-observability/frontend
+          npm install --legacy-peer-deps
+          NITRO_PRESET=node-server npm run build
+
+  # ==========================================
+  # JOB 3: Build & Push Image (Two-Stage Pipeline)
+  # ==========================================
+  build-and-push:
+    name: Build & Push Tagged Container
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+      image_uri: ${{ steps.meta.outputs.image_uri }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Generate Image Tag (YYYYMMDD-HHMMSS-shortsha)
+        id: meta
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          TIMESTAMP=$(date -u +'%Y%m%d-%H%M%S')
+          TAG="${TIMESTAMP}-${SHORT_SHA}"
+          IMAGE_URI="${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/interview-canvas/app:${TAG}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "image_uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "Generated Image URI: ${IMAGE_URI}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./part4-devops-and-observability
+          file: ./part4-devops-and-observability/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image_uri }}
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/interview-canvas/app:dev-latest
+
+  # ==========================================
+  # JOB 4: Deploy Tagged Image to Dev Environment
+  # ==========================================
+  deploy-dev:
+    name: Deploy to Dev (Cloud Run)
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Deploy Image to Cloud Run Dev
+        run: |
+          gcloud run deploy ${{ env.SERVICE_DEV }} \
+            --image ${{ needs.build-and-push.outputs.image_uri }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars SDIP_DATABASE_URL="${{ secrets.SDIP_DATABASE_URL }}",DEPLOYMENT_ENVIRONMENT="development",SERVICE_VERSION="${{ needs.build-and-push.outputs.image_tag }}" \
+            --port 8000 \
+            --min-instances 0 \
+            --max-instances 2 \
+            --memory 512Mi \
+            --timeout 300
+
+      - name: Validate Dev Deployment
+        run: |
+          DEV_URL=$(gcloud run services describe ${{ env.SERVICE_DEV }} --region ${{ env.REGION }} --format 'value(status.url)')
+          echo "Dev URL: $DEV_URL"
+          curl --fail --retry 5 --retry-delay 5 "$DEV_URL/api/health"

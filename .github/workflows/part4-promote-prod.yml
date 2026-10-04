@@ -1,0 +1,73 @@
+name: Part 4 — Promote Dev Release to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to promote to production (e.g. 20261004-183000-83242da or leave blank for dev-latest)"
+        required: false
+        default: "dev-latest"
+      confirm_promotion:
+        type: boolean
+        description: "Confirm deployment to production environment"
+        required: true
+        default: false
+
+env:
+  PROJECT_ID: ai-dev-tool-zoomcamp
+  REGION: europe-west9
+  SERVICE_PROD: interview-canvas-prod
+  REGISTRY: europe-west9-docker.pkg.dev
+
+jobs:
+  promote-to-prod:
+    name: Promote Image to Cloud Run Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Confirmation
+        if: ${{ !inputs.confirm_promotion }}
+        run: |
+          echo "❌ Deployment aborted: Promotion confirmation was not checked."
+          exit 1
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Determine Image URI
+        id: target
+        run: |
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="dev-latest"
+          fi
+          IMAGE_URI="${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/interview-canvas/app:${TAG}"
+          echo "Promoting image: ${IMAGE_URI}"
+          echo "image_uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Deploy Promoted Image to Production
+        run: |
+          gcloud run deploy ${{ env.SERVICE_PROD }} \
+            --image ${{ steps.target.outputs.image_uri }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars SDIP_DATABASE_URL="${{ secrets.SDIP_DATABASE_URL_PROD || secrets.SDIP_DATABASE_URL }}",DEPLOYMENT_ENVIRONMENT="production",SERVICE_VERSION="${{ steps.target.outputs.tag }}" \
+            --port 8000 \
+            --min-instances 0 \
+            --max-instances 5 \
+            --memory 1Gi \
+            --timeout 300
+
+      - name: Validate Production Health Check
+        run: |
+          PROD_URL=$(gcloud run services describe ${{ env.SERVICE_PROD }} --region ${{ env.REGION }} --format 'value(status.url)')
+          echo "Production URL: $PROD_URL"
+          curl --fail --retry 5 --retry-delay 5 "$PROD_URL/api/health"
