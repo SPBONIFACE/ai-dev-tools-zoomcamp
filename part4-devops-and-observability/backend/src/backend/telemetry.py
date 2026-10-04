@@ -2,13 +2,17 @@ import os
 import logging
 from typing import Optional
 from opentelemetry import trace, metrics
+from opentelemetry._logs import set_logger_provider
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader, ConsoleMetricExporter
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor, ConsoleLogExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 logger = logging.getLogger(__name__)
@@ -64,34 +68,44 @@ http_requests_counter = meter.create_counter(
 
 
 def setup_telemetry(app=None):
-    """Initializes OpenTelemetry tracing, metrics, and auto-instruments FastAPI."""
+    """Initializes OpenTelemetry tracing, metrics, logs, and auto-instruments FastAPI."""
     if not OTEL_ENABLED:
         logger.info("OpenTelemetry is disabled via OTEL_ENABLED=false")
         return
 
-    # Setup Tracing
+    # 1. Setup Tracing
     tracer_provider = TracerProvider(resource=resource)
     try:
         otlp_trace_exporter = OTLPSpanExporter(endpoint=OTLP_ENDPOINT, insecure=True)
         tracer_provider.add_span_processor(BatchSpanProcessor(otlp_trace_exporter))
     except Exception as e:
-        logger.warning(f"Could not connect to OTLP trace exporter at {OTLP_ENDPOINT}: {e}. Falling back to console.")
         tracer_provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
-    
     trace.set_tracer_provider(tracer_provider)
 
-    # Setup Metrics
+    # 2. Setup Metrics
     try:
         otlp_metric_exporter = OTLPMetricExporter(endpoint=OTLP_ENDPOINT, insecure=True)
         metric_reader = PeriodicExportingMetricReader(otlp_metric_exporter, export_interval_millis=5000)
     except Exception as e:
-        logger.warning(f"Could not connect to OTLP metric exporter at {OTLP_ENDPOINT}: {e}. Falling back to console.")
         metric_reader = PeriodicExportingMetricReader(ConsoleMetricExporter(), export_interval_millis=15000)
-
     meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
     metrics.set_meter_provider(meter_provider)
 
-    # Auto-instrument FastAPI if application is provided
+    # 3. Setup Structured Logs (export to OTel Collector -> Loki)
+    logger_provider = LoggerProvider(resource=resource)
+    try:
+        otlp_log_exporter = OTLPLogExporter(endpoint=OTLP_ENDPOINT, insecure=True)
+        logger_provider.add_log_record_processor(BatchLogRecordProcessor(otlp_log_exporter))
+    except Exception as e:
+        logger_provider.add_log_record_processor(BatchLogRecordProcessor(ConsoleLogExporter()))
+    set_logger_provider(logger_provider)
+
+    # Attach LoggingHandler to Python root logger so all app & uvicorn logs are sent to Loki
+    log_handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+    logging.getLogger().addHandler(log_handler)
+    logging.getLogger("uvicorn.access").addHandler(log_handler)
+
+    # 4. Auto-instrument FastAPI if application is provided
     if app:
         FastAPIInstrumentor.instrument_app(
             app,
@@ -99,4 +113,4 @@ def setup_telemetry(app=None):
             meter_provider=meter_provider,
             excluded_urls="api/health,docs,openapi.json,redoc",
         )
-        logger.info(f"OpenTelemetry instrumentation initialized for {SERVICE_NAME} ({ENVIRONMENT}, v{SERVICE_VERSION})")
+        logger.info(f"OpenTelemetry (traces, metrics, logs) initialized for {SERVICE_NAME} ({ENVIRONMENT}, v{SERVICE_VERSION})")

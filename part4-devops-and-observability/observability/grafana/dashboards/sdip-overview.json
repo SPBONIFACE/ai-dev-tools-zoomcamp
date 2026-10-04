@@ -33,11 +33,15 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "200" },
+            "matcher": { "id": "byName", "options": "HTTP 200" },
             "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
           },
           {
-            "matcher": { "id": "byName", "options": "502" },
+            "matcher": { "id": "byName", "options": "HTTP 201" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "super-light-green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "HTTP 502" },
             "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
           }
         ]
@@ -58,7 +62,7 @@
           "refId": "A"
         }
       ],
-      "title": "HTTP Requests by Status Code (2xx vs 4xx vs 5xx)",
+      "title": "HTTP Requests by Status Code",
       "type": "timeseries"
     },
     {
@@ -156,7 +160,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "gradientMode": "none",
             "lineInterpolation": "smooth",
             "lineWidth": 2,
@@ -178,7 +182,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "sum(increase(sdip_sdip_sessions_created_total_total[5m])) or vector(0)",
+          "expr": "sum(increase(sdip_sdip_sessions_created_total[5m])) or vector(0)",
           "legendFormat": "Sessions Created (5m)",
           "range": true,
           "refId": "A"
@@ -222,7 +226,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "editorMode": "code",
-          "expr": "sum(increase(sdip_sdip_operation_failures_total_total[5m])) or vector(0)",
+          "expr": "sum(increase(sdip_sdip_operation_failures_total[5m])) or vector(0)",
           "legendFormat": "Operation Failures (5m)",
           "range": true,
           "refId": "A"
@@ -230,6 +234,32 @@
       ],
       "title": "Component Creation Failures per 5 min",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "{service_name=\"sdip-backend\"}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Live Application Logs (Loki)",
+      "type": "logs"
     }
   ],
   "refresh": "5s",
@@ -239,16 +269,19 @@
   "templating": {
     "list": [
       {
-        "current": { "selected": true, "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "definition": "label_values(sdip_target_info, deployment_environment_name)",
+        "current": { "selected": true, "text": "All", "value": ".*" },
         "hide": 0,
         "includeAll": true,
         "multi": false,
         "name": "environment",
-        "query": { "query": "label_values(sdip_target_info, deployment_environment_name)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
-        "refresh": 1,
-        "type": "query"
+        "options": [
+          { "selected": true, "text": "All", "value": ".*" },
+          { "selected": false, "text": "local", "value": "local" },
+          { "selected": false, "text": "development", "value": "development" },
+          { "selected": false, "text": "production", "value": "production" }
+        ],
+        "query": "local, development, production",
+        "type": "custom"
       }
     ]
   },
@@ -257,5 +290,5 @@
   "timezone": "browser",
   "title": "System Design Canvas — Application Overview",
   "uid": "sdip-overview",
-  "version": 2
+  "version": 4
 }
