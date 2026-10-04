@@ -11,7 +11,7 @@ This directory consolidates all homework assignments and project submissions for
 | **[Homework 1](./hw1)** | Week 1 | **Spec-Driven Engineering & Role Contracts** (Chore Manager) | [`homework/hw1/`](./hw1) & [`part1-ai-native-development/`](../part1-ai-native-development) | Graded ✅ |
 | **[Homework 2](./hw2)** | Week 2 | **Full-Stack Application & Issue Automation** (Interactive Canvas) | [`homework/hw2/`](./hw2) | Graded ✅ |
 | **[Homework 3](./hw3)** | Week 3 | **Agent Relay Containerization, Postgres & K8s Deployment** | [`homework/hw3/`](./hw3) | Graded ✅ |
-| **[Homework 4](./hw4)** | Week 4 | **Order Tracker Observability & AI Incident Response** | [`homework/hw4/`](./hw4) | In Progress 🔄 |
+| **[Homework 4](./hw4)** | Week 4 | **Order Tracker Observability & AI Incident Response** | [`homework/hw4/`](./hw4) | Completed ✅ |
 
 ---
 

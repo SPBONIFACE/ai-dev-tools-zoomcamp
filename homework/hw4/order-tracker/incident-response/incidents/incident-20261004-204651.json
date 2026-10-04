@@ -1,0 +1,27 @@
+{
+  "incident_id": "incident-20261004-204651",
+  "timestamp": "20261004-204651",
+  "alert_name": "ResponderTest",
+  "alert_payload": {
+    "status": "firing",
+    "labels": {
+      "alertname": "ResponderTest",
+      "service": "sdip-backend",
+      "environment": "development",
+      "test": "true"
+    },
+    "annotations": {
+      "summary": "Test notification; no incident to fix"
+    }
+  },
+  "system_status": {
+    "test_result": "passed",
+    "test_summary": "16 passed, 2 warnings in 1.73s"
+  },
+  "agent_response": {
+    "verdict": "False Positive",
+    "explanation": "Alert is identified as a synthetic responder test notification; no application code changes required.",
+    "prompt_used": "You are the on-call engineer for this repository. An alert just fired.\n\nAlert Details:\n{\n  \"status\": \"firing\",\n  \"labels\": {\n    \"alertname\": \"ResponderTest\",\n    \"service\": \"sdip-backend\",\n    \"environment\": \"development\",\n    \"test\": \"true\"\n  },\n  \"annotations\": {\n    \"summary\": \"Test notification; no incident to fix\"\n  }\n}\n\nInvestigate the root cause. Read the code and reproduce the failure.\nIf you find a real bug, make the smallest correction, run the backend tests,\nand commit the fix with a clear message.\n\nIf the alert is a false positive, explain why and do not change the code.\n",
+    "last_line": "No action required: synthetic test notification verified."
+  }
+}

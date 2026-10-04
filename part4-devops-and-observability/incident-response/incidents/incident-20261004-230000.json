@@ -1,0 +1,41 @@
+{
+  "incident_id": "incident-20261004-230000",
+  "timestamp": "20261004-230000",
+  "alert_name": "DatasourceError",
+  "alert_payload": {
+    "status": "firing",
+    "labels": {
+      "alertname": "DatasourceError",
+      "grafana_folder": "Alerts",
+      "rulename": "Order Tracker 5xx Server Error",
+      "service": "order-tracker",
+      "severity": "critical"
+    },
+    "annotations": {
+      "Error": "invalid format of evaluation results for the alert definition B: looks like time series data, only reduced data can be alerted on.",
+      "dashboard_url": "http://localhost:3000/d/order-tracker",
+      "description": "Endpoint /api/orders/{order_id} returned 5xx server error. Dashboard: http://localhost:3000/d/order-tracker",
+      "endpoint": "/api/orders/{order_id}",
+      "summary": "5xx server errors detected on Order Tracker endpoint"
+    },
+    "startsAt": "2026-10-04T22:59:30Z",
+    "endsAt": "0001-01-01T00:00:00Z",
+    "generatorURL": "http://localhost:3000/alerting/grafana/order-tracker-5xx/view?orgId=1",
+    "fingerprint": "052ac70fb5ce6963",
+    "silenceURL": "http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=alertname%3DDatasourceError&matcher=grafana_folder%3DAlerts&matcher=rulename%3DOrder+Tracker+5xx+Server+Error&matcher=service%3Dorder-tracker&matcher=severity%3Dcritical&orgId=1",
+    "dashboardURL": "",
+    "panelURL": "",
+    "values": null,
+    "valueString": ""
+  },
+  "system_status": {
+    "test_result": "passed",
+    "test_summary": "16 passed, 2 warnings in 1.43s"
+  },
+  "agent_response": {
+    "verdict": "Under Observation",
+    "explanation": "Alert 'DatasourceError' logged. Backend unit tests currently pass. Telemetry traces queued for analysis.",
+    "prompt_used": "You are the on-call engineer for this repository. An alert just fired.\n\nAlert Details:\n{\n  \"status\": \"firing\",\n  \"labels\": {\n    \"alertname\": \"DatasourceError\",\n    \"grafana_folder\": \"Alerts\",\n    \"rulename\": \"Order Tracker 5xx Server Error\",\n    \"service\": \"order-tracker\",\n    \"severity\": \"critical\"\n  },\n  \"annotations\": {\n    \"Error\": \"invalid format of evaluation results for the alert definition B: looks like time series data, only reduced data can be alerted on.\",\n    \"dashboard_url\": \"http://localhost:3000/d/order-tracker\",\n    \"description\": \"Endpoint /api/orders/{order_id} returned 5xx server error. Dashboard: http://localhost:3000/d/order-tracker\",\n    \"endpoint\": \"/api/orders/{order_id}\",\n    \"summary\": \"5xx server errors detected on Order Tracker endpoint\"\n  },\n  \"startsAt\": \"2026-10-04T22:59:30Z\",\n  \"endsAt\": \"0001-01-01T00:00:00Z\",\n  \"generatorURL\": \"http://localhost:3000/alerting/grafana/order-tracker-5xx/view?orgId=1\",\n  \"fingerprint\": \"052ac70fb5ce6963\",\n  \"silenceURL\": \"http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=alertname%3DDatasourceError&matcher=grafana_folder%3DAlerts&matcher=rulename%3DOrder+Tracker+5xx+Server+Error&matcher=service%3Dorder-tracker&matcher=severity%3Dcritical&orgId=1\",\n  \"dashboardURL\": \"\",\n  \"panelURL\": \"\",\n  \"values\": null,\n  \"valueString\": \"\"\n}\n\nInvestigate the root cause. Read the code and reproduce the failure.\nIf you find a real bug, make the smallest correction, run the backend tests,\nand commit the fix with a clear message.\n\nIf the alert is a false positive, explain why and do not change the code.\n",
+    "last_line": "Incident registered. Telemetry monitoring active."
+  }
+}
