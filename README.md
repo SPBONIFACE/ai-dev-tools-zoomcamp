@@ -51,17 +51,20 @@ ai-dev-tools-zoomcamp/
 │   ├── Dockerfile                           # Optimized multi-stage build (Node + Python)
 │   ├── docker-compose.yaml                  # Local PostgreSQL + App stack
 │   ├── e2e/                                 # Playwright dual-browser concurrency tests
-│   ├── .github/workflows/deploy.yml         # GitHub Actions CI/CD (GCP Workload Identity)
-│   └── homework-wk3/                        # Agent Relay containerization & K8s deployment
+│   └── .github/workflows/deploy.yml         # GitHub Actions CI/CD (GCP Workload Identity)
 │
 ├── part4-devops-and-observability/          # Week 4: OTel, Dashboards & Autonomous Responder
 │   ├── observability/                       # OTel Collector, Prometheus, Loki, Tempo, Grafana
 │   ├── incident-response/                   # Webhook listener & headless agent runner
-│   ├── homework-wk4/                        # Order Tracker failure investigation & fixes
+│   ├── backend/                             # FastAPI with OTel Traces, Metrics & Loki logging
 │   └── DevOps and Observability...pdf       # Course reference guide
 │
-├── homework/                                # Dedicated homework submissions
-│   └── hw2/                                 # Week 2 submission (Issues, OpenAPI & Fullstack)
+├── homework/                                # Consolidated homework assignments (Weeks 1-4)
+│   ├── README.md                            # Master homework index & submission guide
+│   ├── hw1/                                 # Week 1: Spec-Driven Development & Role Contracts
+│   ├── hw2/                                 # Week 2: Interactive Canvas & OpenAPI Automation
+│   ├── hw3/                                 # Week 3: Agent Relay Containerization & K8s
+│   └── hw4/                                 # Week 4: Observability, Metrics & AI Incident Response
 │
 └── docs/                                    # Architectural blueprints & course resources
     ├── course-materials/                    # Course slide decks & guides
