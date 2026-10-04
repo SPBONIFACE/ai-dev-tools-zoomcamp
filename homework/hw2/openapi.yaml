@@ -1,0 +1,536 @@
+openapi: 3.1.0
+info:
+  title: TableHop API
+  description: Restaurant Waitlist & Table Management API
+  version: 0.1.0
+paths:
+  /api/waitlist:
+    get:
+      tags:
+      - Waitlist
+      summary: Get Waitlist
+      operationId: get_waitlist_api_waitlist_get
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/PartyStatus'
+          - type: 'null'
+          description: Filter by party status
+          title: Status
+        description: Filter by party status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyResponse'
+                title: Response Get Waitlist Api Waitlist Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Waitlist
+      summary: Create Party
+      operationId: create_party_api_waitlist_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/waitlist/{party_id}:
+    get:
+      tags:
+      - Waitlist
+      summary: Get Party
+      operationId: get_party_api_waitlist__party_id__get
+      parameters:
+      - name: party_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Party Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/waitlist/{party_id}/status:
+    patch:
+      tags:
+      - Waitlist
+      summary: Update Party Status
+      operationId: update_party_status_api_waitlist__party_id__status_patch
+      parameters:
+      - name: party_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Party Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyStatusUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/waitlist/{party_id}/notify:
+    post:
+      tags:
+      - Waitlist
+      summary: Notify Party
+      operationId: notify_party_api_waitlist__party_id__notify_post
+      parameters:
+      - name: party_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Party Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifyPartyResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/waitlist/{party_id}/cancel:
+    post:
+      tags:
+      - Waitlist
+      summary: Cancel Party
+      operationId: cancel_party_api_waitlist__party_id__cancel_post
+      parameters:
+      - name: party_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Party Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/tables:
+    get:
+      tags:
+      - Tables
+      summary: Get Tables
+      operationId: get_tables_api_tables_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TableResponse'
+                type: array
+                title: Response Get Tables Api Tables Get
+  /api/tables/{table_id}/seat:
+    post:
+      tags:
+      - Tables
+      summary: Seat Party
+      operationId: seat_party_api_tables__table_id__seat_post
+      parameters:
+      - name: table_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Table Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeatPartyRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/tables/{table_id}/clear:
+    post:
+      tags:
+      - Tables
+      summary: Clear Table
+      operationId: clear_table_api_tables__table_id__clear_post
+      parameters:
+      - name: table_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Table Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/notifications:
+    get:
+      tags:
+      - Notifications
+      summary: Get Notifications
+      operationId: get_notifications_api_notifications_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NotificationLogResponse'
+                type: array
+                title: Response Get Notifications Api Notifications Get
+  /api/analytics/summary:
+    get:
+      tags:
+      - Analytics
+      summary: Get Analytics Summary
+      operationId: get_analytics_summary_api_analytics_summary_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsSummaryResponse'
+  /:
+    get:
+      summary: Root
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /health:
+    get:
+      summary: Health Check
+      operationId: health_check_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    AnalyticsSummaryResponse:
+      properties:
+        active_waiting:
+          type: integer
+          title: Active Waiting
+        avg_wait_min:
+          type: integer
+          title: Avg Wait Min
+        total_seated_today:
+          type: integer
+          title: Total Seated Today
+      type: object
+      required:
+      - active_waiting
+      - avg_wait_min
+      - total_seated_today
+      title: AnalyticsSummaryResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    NotificationLogResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        party_id:
+          type: string
+          title: Party Id
+        phone_number:
+          type: string
+          title: Phone Number
+        message:
+          type: string
+          title: Message
+        sent_at:
+          type: string
+          format: date-time
+          title: Sent At
+      type: object
+      required:
+      - id
+      - party_id
+      - phone_number
+      - message
+      - sent_at
+      title: NotificationLogResponse
+    NotifyPartyResponse:
+      properties:
+        party:
+          $ref: '#/components/schemas/PartyResponse'
+        notification:
+          $ref: '#/components/schemas/NotificationLogResponse'
+      type: object
+      required:
+      - party
+      - notification
+      title: NotifyPartyResponse
+    PartyCreate:
+      properties:
+        guest_name:
+          type: string
+          minLength: 1
+          title: Guest Name
+          description: Primary guest name
+        party_size:
+          type: integer
+          maximum: 12.0
+          minimum: 1.0
+          title: Party Size
+          description: Number of guests (1-12)
+        phone_number:
+          type: string
+          minLength: 1
+          title: Phone Number
+          description: Contact phone number
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+          description: Special requests or notes
+        quoted_wait_min:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Quoted Wait Min
+          description: Host manual wait time quote in minutes
+      type: object
+      required:
+      - guest_name
+      - party_size
+      - phone_number
+      title: PartyCreate
+    PartyResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        guest_name:
+          type: string
+          title: Guest Name
+        party_size:
+          type: integer
+          title: Party Size
+        phone_number:
+          type: string
+          title: Phone Number
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        quoted_wait_min:
+          type: integer
+          title: Quoted Wait Min
+        status:
+          $ref: '#/components/schemas/PartyStatus'
+        table_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Table Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        notified_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Notified At
+        seated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Seated At
+      type: object
+      required:
+      - id
+      - guest_name
+      - party_size
+      - phone_number
+      - quoted_wait_min
+      - status
+      - created_at
+      title: PartyResponse
+    PartyStatus:
+      type: string
+      enum:
+      - waiting
+      - notified
+      - seated
+      - cancelled
+      - no_show
+      title: PartyStatus
+    PartyStatusUpdate:
+      properties:
+        status:
+          $ref: '#/components/schemas/PartyStatus'
+      type: object
+      required:
+      - status
+      title: PartyStatusUpdate
+    SeatPartyRequest:
+      properties:
+        party_id:
+          type: string
+          title: Party Id
+      type: object
+      required:
+      - party_id
+      title: SeatPartyRequest
+    TableResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        capacity:
+          type: integer
+          title: Capacity
+        status:
+          $ref: '#/components/schemas/TableStatus'
+        current_party_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Party Id
+      type: object
+      required:
+      - id
+      - name
+      - capacity
+      - status
+      title: TableResponse
+    TableStatus:
+      type: string
+      enum:
+      - available
+      - occupied
+      title: TableStatus
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

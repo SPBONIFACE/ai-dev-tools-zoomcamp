@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Young Serif", Georgia, "Times New Roman", serif;
+  --color-header: #efe9df;
+
+  --color-canvas: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-subtle: #faf8f4;
+  --color-line: #e7e2d9;
+  --color-line-strong: #d6cfc3;
+
+  --color-ink: #1f1b16;
+  --color-ink-2: #5f574c;
+  --color-ink-3: #948b7e;
+
+  --color-accent: #b4531f;
+  --color-accent-hover: #9a4518;
+  --color-accent-soft: #f6ebe2;
+
+  --color-waiting: #b7791f;
+  --color-notified: #2f5e8c;
+  --color-notified-soft: #eaf0f6;
+  --color-seated: #2f6b4b;
+  --color-seated-soft: #e9f2ec;
+  --color-danger: #a23b32;
+  --color-danger-soft: #f8ecea;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-[5px] px-3 text-[13px] font-medium transition-colors duration-150 select-none;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent-hover active:translate-y-px;
+  }
+  .btn-dark {
+    @apply bg-ink text-white hover:bg-[#3a332b] active:translate-y-px;
+  }
+  .btn-secondary {
+    @apply border border-line-strong bg-surface text-ink hover:bg-subtle hover:border-ink-3 active:translate-y-px;
+  }
+  .btn-ghost {
+    @apply text-ink-2 hover:bg-[#efebe4] hover:text-ink;
+  }
+  .btn-icon {
+    @apply w-8 px-0;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-[13px] font-medium text-ink;
+  }
+  .field-input {
+    @apply h-9 w-full rounded-[5px] border border-line-strong bg-surface px-3 text-sm text-ink placeholder:text-ink-3;
+    @apply focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent/15;
+  }
+
+  .panel {
+    @apply rounded-md border border-line bg-surface;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
